@@ -1,0 +1,157 @@
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+
+\usepackage{amsfonts}
+\usepackage{scalerel}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage{paralist}
+
+\newcommand{\delete}[1]{}
+\newcommand{\assert}[1]{\{ #1 \}}
+
+%\newcommand{\Nat}{{\mathbb N}}
+% \newcommand{\Nat}{\mi{Nat}}
+% \newcommand{\Int}{\mi{Int}}
+% \newcommand{\Bool}{\mi{Bool}}
+% \newcommand{\Char}{\mi{Char}}
+%
+% \newcommand{\bmax}{\uparrow}
+% \newcommand{\fork}[2]{\langle #1 , #2 \rangle}
+% \renewcommand{\to}{\rightarrow}
+% \newcommand{\betato}{\overset{\beta}{\longrightarrow}}
+% \newcommand{\from}{\leftarrow}
+% \renewcommand{\implies}{\Rightarrow}
+% \newcommand{\ffrom}{\Leftarrow}
+% \renewcommand{\iff}{\equiv}
+% \newcommand{\Iff}{\equiv}
+%
+% \newcommand{\seq}[1]{\lbrack #1 \rbrack}
+% \newcommand{\set}[1]{\{ #1 \}}
+% \newcommand{\alttext}[1]{%
+% \only<presentation>{\textcolor{RoyalBlue}{#1}}%
+% \only<article>{{\em #1}}}
+%
+% \newcommand{\mi}[1]{\mathit{#1}}
+% %\newcommand{\comp}{\mathbin{\raisebox{.2ex}{\ensuremath{\scriptscriptstyle\circ}}}}
+% \newcommand{\xs}{\mi{xs}}
+% \newcommand{\xss}{\mi{xss}}
+% \newcommand{\yss}{\mi{yss}}
+% \newcommand{\ys}{\mi{ys}}
+% \newcommand{\zs}{\mi{zs}}
+% \newcommand{\ts}{\mi{ts}}
+%
+% \newcommand{\bpg}{|\lbrack~}
+% \newcommand{\epg}{\rbrack|}
+% \newcommand{\pid}{\phantom{\bpg}}
+% \newcommand{\galt}{\only<presentation>{\lbrack\!\rbrack}\only<article>{\lbrack\!\,\rbrack}}
+% \newcommand{\gdo}{\mathbf{do}}
+% \newcommand{\god}{\mathbf{od}}
+% \newcommand{\gif}{\mathbf{if}}
+% \newcommand{\gfi}{\mathbf{fi}}
+% \newcommand{\gcon}{\mathbf{con}}
+% \newcommand{\gvar}{\mathbf{var}}
+% \newcommand{\doalt}{\phantom{\mathbf{do}}\!\!\galt}
+% \newcommand{\ifalt}{\phantom{\mathbf{if}}\!\!\galt}
+\newcommand{\htriple}[3]{\assert{#1}\,#2\,\assert{#3}}
+% % \newcommand{\subst}[2]{\lbrack {#2}/{#1}\rbrack}
+% \newcommand{\subst}[2]{\lbrack {#1}\backslash{#2}\rbrack}
+% \newcommand{\arridx}[2]{{#1}[{#2}]}
+% \newcommand{\sumq}[1]{\mathop{\Sigma}\limits_{#1}}
+% \newcommand{\quant}[4]{\langle\, #1#2:#3:#4 \,\rangle}
+% \newcommand{\sumqn}[3]{\quant{\Sigma}{#1}{#2}{#3}}
+% \newcommand{\maxq}[3]{\quant{\bmax}{#1}{#2}{#3}}
+% \newcommand{\minq}[3]{\quant{\downarrow}{#1}{#2}{#3}}
+% \newcommand{\numq}[3]{\quant{\#}{#1}{#2}{#3}}
+% \newcommand{\existsq}[3]{\quant{\exists}{#1}{#2}{#3}}
+% \newcommand{\forallq}[3]{\quant{\forall}{#1}{#2}{#3}}
+% \renewcommand{\mod}{\mathbin{\mathbf{mod}}}
+% \renewcommand{\div}{\mathbin{\mathbf{div}}}
+% \newcommand{\arrayOf}[2]{\mathbf{array}\,{#2}\,\mathbf{of}\,#1}
+% \newcommand{\arrupd}[3]{#1_{#2 \mapsto #3}}
+% %\newenvironment{prog}[1]%
+% %{\setlength\arraycolsep{0.1em}\[\begin{array}{#1}}%
+% %{\end{array}\]}
+% \renewcommand{\wp}{\mi{wp}}
+%
+% \newenvironment{prog}[1]%           % An environment like align
+% {\only<presentation>{\vspace{-0.5em}}
+% \[                             % with three columns, the leftmost column
+% \setlength\arraycolsep{0.2em}    % left-aligned. The line sep is denser,
+% \begin{array}{#1}}%             % Thus more suitable for programs.
+% {\end{array}\]%
+% \only<presentation>{\vspace{-1.5em}}%
+% %\only<article>{\vspace{-0.5em}}%
+% }%
+%
+% \newcommand{\nilseq}{\lbrack\,\rbrack}
+% \newcommand{\If}{\mathbf{if}}
+% \newcommand{\Then}{\mathbf{then}}
+% \newcommand{\Else}{\mathbf{else}}
+% \newcommand{\Otherwise}{\mathbf{otherwise}}
+% \newcommand{\Let}{\mathbf{let}}
+% \newcommand{\In}{\mathbf{in}}
+% \newcommand{\Where}{\mathbf{where}}
+% \newcommand{\Case}{\mathbf{case}}
+% \newcommand{\Of}{\mathbf{of}}
+% \newcommand{\Type}{\mathbf{type}}
+% \newcommand{\Data}{\mathbf{data}}
+% \newcommand{\Codata}{\mathbf{codata}}
+% \newcommand{\reason}[1]{~~%
+%   \only<presentation>{\textcolor{CadetBlue}{\mbox{\{ #1 \}}}}%
+%   \only<article>{\mbox{\{ #1 \}}}}
+% \newcommand{\comp}{\mathbin{\cdot}}
+% \newcommand{\app}{\mathop{+\!\!\!+}}
+% %\newcommand{\eqq}{\mathrel{==}}
+% \newcommand{\eqq}{\doubleequals}
+% \newcommand{\nth}{\mathop{!!}}
+% %\newcommand{\neq}{\mathrel{\backslash=}}
+% %\newcommand{\band}{\mathrel{\&\&}}
+% \newcommand{\band}{\mathrel{\wedge}}
+% %\newcommand{\bor}{\mathrel{||}}
+% \newcommand{\bor}{\mathrel{\vee}}
+% \newcommand{\infix}[1]{\mathbin{`#1`}}
+%
+% \newcommand{\True}{\mi{True}}
+% \newcommand{\False}{\mi{False}}
+% \newcommand{\Succ}{\mathbf{1_{+}}}
+%
+% \newcommand{\Tree}{\mi{Tree}}
+% \newcommand{\ITree}{\mi{ITree}}
+% \newcommand{\ETree}{\mi{ETree}}
+% \newcommand{\Null}{\mathsf{Null}}
+% \newcommand{\Node}{\mathsf{Node}}
+% \newcommand{\Tip}{\mathsf{Tip}}
+% \newcommand{\Bin}{\mathsf{Bin}}
+%
+% \newcommand{\bmin}{\mathbin{\downarrow}}
+%
+%
+% \newcommand{\foldr}{\mi{foldr}}
+% \newcommand{\scanr}{\mi{scanr}}
+% \newcommand{\foldN}{\mi{foldN}}
+% \newcommand{\head}{\mi{head}}
+% \newcommand{\tail}{\mi{tail}}
+% \newcommand{\foldIT}{\mi{foldIT}}
+% \newcommand{\foldET}{\mi{foldET}}
+% \newcommand{\unfoldr}{\mi{unfoldr}}
+% \newcommand{\unfoldIT}{\mi{unfoldIT}}
+% \newcommand{\unfoldET}{\mi{unfoldET}}
+%
+%
+% \newcommand{\cquotes}[1]{\text{\tt'}#1\text{\tt'}}
+% \newcommand{\squotes}[1]{\text{\tt"}\text{#1}\text{\tt"}}
+% \newcommand{\bquotes}[1]{\text{\tt`}#1\text{\tt`}}
+%
+% \newcommand{\sqse}{\sqsubseteq}
+% \newcommand{\sse}{\subseteq}
+%
+% \newcommand{\sem}[1]{\llbracket #1 \rrbracket}
+% \newcommand{\redu}[2]{#1 \mapsto #2}
+% \newcommand{\redus}[2]{#1 \mapsto^{\star} #2}
+%
+% \newcommand{\acite}[1]{\only<article>{ \cite{#1}}}
+%
+% \newcommand{\lam}[2]{\lambda{#1}\,.\,{#2}}
