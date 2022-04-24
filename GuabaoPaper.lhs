@@ -8,8 +8,13 @@
 %include polycode.fmt
 %include Formatting.fmt
 %include GCL.fmt
+%include lineno.fmt
 
 \include{macros}
+
+\renewcommand*{\formatlinenum}[1]{\makebox[3em][l]{\scriptsize{#1}}}%
+
+\numbersoff
 
 \newcommand{\todo}[1]{{\bf Todo}: \lbrack #1 \rbrack}
 
@@ -26,20 +31,28 @@
 \author{Shin-Cheng Mu\inst{1}%\orcidID{0000-0002-4755-601X}
 \and
 Ting-Yan Lai\inst{1}\and
-Thing-Han Lim\inst{1}}
+Thing-Han Lim\inst{1}\and
+Chien-Yuan Su\inst{1}\and
+Hsien-En Tzeng\inst{2}%
+}
 %
 \authorrunning{S-C. Mu  et al.}
 
 \institute{
 Institute of Information Science, %\\
-Academia Sinica, Taiwan}
+Academia Sinica, Taiwan \and
+National Taiwan University, Taiwan
+}
 
 
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-The abstract should briefly summarize the contents of the paper in
-150--250 words.
+
+Guabao is an integrated environment for imperative program derivation --- the process of formally and step-wise constructing a program from its specification.
+As the programmer types in the code, in a variation of Guarded Command Language,
+Guabao computes its proof obligations in an interface that encourages the program and its correctness proof to be developed hand in hand.
+We present the user experience of Guabao, the algorithm it uses to compute proof obligations and infer pre/postconditions, and talk about our preliminary experience using it in an undergraduate course.
 
 \keywords{program derivation \and integrated developing environment \and proofs}
 \end{abstract}
@@ -63,11 +76,11 @@ This view of programs invites the programmer to abstract away from how the progr
 The program is then derived by manipulating the pre/postconditions using various calculational rules.
 Various previous work~\cite{Dijkstra:76:Discipline,%
 Gries:81:Science,Kaldewaij:90:Programming,Morgan:90:Programming,%
-Backhouse:03:Program,Backhouse:11:Algorithmic} collectively developed a methodology of program development from specification: how to construct a loop invariant from a desired postcondition; how to construct the loop body from its last step; how to ensure termination, etc.
+Backhouse:03:Program,Backhouse:11:Algorithmic} collectively developed a methodology of program development from specification, equipped with techniques for constructing a loop invariant from a desired postcondition, constructing the loop body from its last step, ensuring termination, etc.
 This methodology was applied to derive algorithms
 solving individual small problems
 (e.g~\cite{Rem:89:Small,Rem:90:Small}) as well as families of problems (e.g~\cite{Zantema:92:Longest}).
-Meanwhile, derivation of functional programs, a closely related topic, has also been developing (e.g~\cite{Bird:10:Pearls}).
+% Meanwhile, derivation of functional programs, a closely related topic, has also been developing (e.g~\cite{Bird:10:Pearls}).
 Within the advocating community it is at least wished that the concept of program derivation should be taught as part of the fundamental training for programmers and computing science majors.
 % These days, program derivation is more practiced in the functional programming community. Derivation of imperative programs, however, is also a field with rich possibilities and potentials.
 
@@ -79,7 +92,7 @@ The aim is to develop a programming environment having the following features:
 \item It encourages {\bf developing proofs and programs together}.
 While the user may certainly write up all the code in Guabao and verify it afterwards, the interface shall allow the user to interleave proving and coding, and let the two modes aid each other.
 \item It encourages {\bf backward-reasoning}.
-Since it is easier to construct the weakest precondition of an assignment from its postcondition then the other way round,
+Since it is easier to construct the weakest precondition of an assignment from its postcondition than the other way round,
 to construct a block of statements, many derivation techniques start with thinking about what the \emph{last assignment} could be.
 The interface of Guabao should make such construction easy and natural.
 \item It allows {\bf free-form text editing}, as opposed to treating programs as diagrams as some program construction tools do, since we believe it what most programmers would prefer.
@@ -87,7 +100,7 @@ The interface of Guabao should make such construction easy and natural.
 In Section~\ref{sec:programming-example} we will see an example demonstrating all these features.
 It might also help to clarify what Guabao is not.
 \begin{enumerate}
-\item Gaubao is not (merely) an implementation of Guarded Command Language (GCL).
+\item Gaubao is not an implementation of Guarded Command Language (GCL).
 Dijkstra~\cite{Dijkstra:98:Cruelty} wrote that he would
 design a programming language for teaching (which we believe would be GCL) and ``see to it that [it] has not been implemented on campus so that students are protected from the temptation to test their programs.''
 Gaubao is not an implementation of GCL in which one can write a program and test it, but an environment where a program and its proof can be designed together.
@@ -104,89 +117,8 @@ Regarding its name,
 GUA in Guabao comes from GUArded command language.
 Guabao (\cjk{刈包}) is a street food popular in places including Taiwan, where Guabao the software was designed.
 
-% \section{Motivation}
-% \label{sec:motivation}
-%
-% Derivation of functional programs is relatively linear. We start from a specification, transform it to the next, until we have a program whose performance we are happy about.
-% Shown below is an outline derivation of the classical ``maximum segment sum'' (MSS) problem --- that is, given a list of numbers, compute the largest sum of a consecutive segment:
-% \begin{spec}
-%    maximum . map sum . concat . map inits . tails  -- problem specification
-% =    {- since |map f . concat = concat . map (map f)| -}
-%    maximum . concat . map (map sum) . map inits . tails
-% =    {- other properties -}
-%    ...
-% =    {- more properties -}
-%    maximum . scanr oplus 0 {-"~~."-}               -- a faster program
-% \end{spec}
-% The problem specification in the first line is a functional program that exhaustively generates all segments, computes the sums for each of them, and picks the maximum.
-% The point here is not the technical details but the style.
-% The derivation is a consecutive, long chunk of calculation proof.
-% Properties needed (such as |map f . concat = concat . map (map f)|) can be proved as a separate lemma, and when we do so, its relationship to the main proof is clear.
-% If the derivation does not work, we may realise (by inspecting what is missing in the derivation) that we need to start from a more general specification.
-% We then construct the new specification, and start over again.
-% All these proceed in a way similar to doing mathematical proofs on a piece of paper, from top of the page to the bottom.
-% In fact, such derivations was indeed often carried out on paper.
-%
-% Not having proper tools, derivations of imperative programs were also mostly carried out on paper. However, the experience is less linear and much more messy -- it is more like keeping writing and erasing symbols on a white board.
-% Consider also the MSS problem, where the input is an array |A| of |N| integers.
-% One might expect that the problem will be solved using a loop.
-% In the \emph{Guarded Command Language}~\cite{Dijkstra:75:Guarded} a while-loop (with a single body) is denoted by:
-% \begin{spec}
-% htriple (P, bnd: e) (DO B -> S OD) Q
-% \end{spec}
-% where |P| is the loop invariant, |e| the \emph{bound} (a value that strictly decreases after each iteration of the loop), and |Q| the postcondition.
-% When the \emph{guards} |B|, the command |S| is executed and the loop gets iterated again; otherwise the loop exits.
-%
-% Once we introduce a loop, however, we have also gave ourselves \emph{four} proof obligations:
-% \begin{enumerate}
-% \item |P && not B ==> Q|,
-% \item |htriple (P && B) S P|,
-% \item |P && B ==> e >= 0|,
-% \item |htriple (P && B && e = C) S (e < C)|.
-% \end{enumerate}
-% The first two properties guarantee that the loop is partially correct: that is, if the loop terminates at all, it terminates in a state satisfying |Q|. The last two properties establishes that the loop actually terminates. The four properties together guarantee total correctness.
-% Often, one or two of the properties are rather trivial.
-% Still, they need to be proved.
-%
-% For the MSS problem we may choose |Q <=> (s = mss N)|, where
-% |mss n = maxquant (p q) (0 <= p <= q <= n) (sum p q)|, the maximum sum of all segments in |arrayCO A 0 n|, and |sum p q| computes the sum of |arrayCO A p q|.
-% A common strategy is to establish the postcondition using a loop in which we keep increment a variable |n| until it reaches |N|. Therefore we come up with the following program skeleton:
-% \begin{spec}
-% s,n := 0,0
-% (assert (s = mss n, bnd: N-n))
-% DO n /= N ->  [:  s = mss n && n /= N,
-%                   s = mss (n + 1) :]
-%               n := n + 1
-% OD
-% (assert (s = mss N))  {-"~~,"-}
-% \end{spec}
-% where
-% |[: pre, post :]| denotes a \emph{spec} --- a piece of program yet-to-be-finished that is supposed to establish postcondition |post| given precondition |pre|.
-%
-% % Transition from the previous program to this one is like tweaking expressions on a white board.
-% To further refine the specification, one may try to find a way to efficiently update |s|. It will turn out that this can only be done by introducing an auxiliary variable:
-% \begin{spec}
-% s,n := 0,0
-% (assert (s = mss n && t = msf n, bnd: N-n))
-% DO n /= N ->  [:  s = mss n && t = msf n && n /= N,
-%                   s = mss (n + 1) && t = msp (n +1) :]
-%               n := n + 1
-% OD
-% (assert (s = mss N))  {-"~~,"-}
-% \end{spec}
-% where |msf n| denotes the maximum sum of \emph{suffixes} of |arrayCO A 0 n|.
-%
-% Once we introduce |t|, the four proof obligations are also updated accordingly and need to be proved again.
-%
-% Finally, to prove termination, one may realise that we need additional constraints on |n|: |0 <= n <= N|. This again changes our proof obligations.
-%
-% Development of an imperative program is like scribbling on a whiteboard, where the programmer may make changes here and there. The required proof obligations updates accordingly. The challenge of the programmer is to come up with the program, while making sure that all the proofs to be done are possible. When doing the proof, the programmer may realise that the program may need further generalisation to make the proof possible at all (it is in the spirit of Dijkstra’s methodology, that proofs and programs should be developed hand-in-hand).
-%
-% It is certainly error-prone keeping track of all these proofs. When teaching, it is hard to give students a systematic idea what proofs are involved. A tool thats keeps track of all the proof obligations would be a much clearer and systematic presentation of the technique. Outside the classroom, such a tool would be helpful for experimenting with different strategies for developing algorithms. The developing environment could also employ external tools, such as a theorem prover or an SMT solver, to discharge the proof obligations.
-%
-
-
 \section{The Guarded Command Language}
+\label{sec:gcl}
 
 %format (MANY (x)) = "{" x "}^{*}"
 %format (SOME (x)) = "{" x "}^{+}"
@@ -213,7 +145,7 @@ They can be accompanied by an optional assertion stating properties we assume ab
 
 An assertion is a Boolean-valued expression in curly brackets.
 By the convention of the program derivation community, a \emph{Hoare triple} |htriple P S Q| denotes total correctness: that is, the program |S|, when executed in a state satisfying |P|, \emph{terminates} in a state satisfying |Q|.
-We prefer it than the partial correctness interpretation (that is, |S| establishes |Q| \emph{if} it terminates) because, as we will see in Section~\ref{sec:programming-example}, that the program must terminate provides useful hints how it can be written.
+We prefer it than the partial correctness interpretation (that is, |S| establishes |Q| \emph{if} it terminates) because, as we will see in Section~\ref{sec:programming-example}, that the program must terminate provides useful hints about how it can be written.
 % The notation |[!pre, post!]| denotes a \emph{spec} --- a hole yet to be filled in with code that shall establish the postcondition |post| provided that precondition |pre| is satisfied.
 
 % For example, the following is an unfinished program that, upon exit, stores the value of |A * B| in |r|, provided that both |A| and |B| are non-negative.
@@ -247,7 +179,7 @@ This is denoted by
 \begin{spec}
 htriple (P, BND: e) (DO B0 -> S0 | B1 -> S1 OD) Q
 \end{spec}
-where |P| is the loop invariant, |e| the bound , and |Q| the postcondition.
+where |P| is the loop invariant, |e| the bound, and |Q| the postcondition.
 
 Once we introduce such a loop, however, we have also given ourselves \emph{four} proof obligations:
 \begin{spec}
@@ -266,20 +198,20 @@ Properties {\sf InvBase} and {\sf InvInd} guarantee that the loop is partially c
 {\sf TermBase} and {\sf TermInd} establish that the loop does terminate.
 The four properties together guarantee total correctness.
 
-One can imagine that, as the size of program grows, the number of proof obligations may soon grows out of hand.
+One can imagine that, as the size of program grows, the number of proof obligations (abbreviated to POs) may soon grows out of hand.
 \footnote{With proper use of assertions, the size of proof obligations can be limited to be linear in the size of the program \cite{Dijkstra:69:Understanding}. Still, that is a lot of properties to prove.}
 It happens often that some of the properties are rather routine, but they still need to be proved.
-It would be nice to have an environment that keeps tracks of these proof obligations.
-Even better, the environment shall encourage the idea that programs can be designed around having to discharge these proof obligations.
+It would be nice to have an environment that keeps tracks of these POs.
+Even better, the environment shall encourage the idea that programs can be designed around having to discharge these POs.
 Therefore the proofs are no longer additional burden, but useful guides during program development.
 
 \section{Programming in Guabao}
 \label{sec:programming-example}
 
 In this section we demonstrate the user experience of program development in Guabao.
-As our worked example, consider the problem: given natural numbers |A| and |B|,
+As our worked example, consider a classical exercise: given natural numbers |A| and |B|,
 compute |A * B| using only addition, subtraction, predicates |even| and |odd|, and multiplication and division by |2|.
-This is a classical exercise, and was once a useful one for early microcomputers, which did not have an atomic instruction for general multiplication (multiplication by |2| involves only bit-shifting and is much cheaper).
+% This is a classical exercise, and was once a useful one for early microcomputers, which did not have an atomic instruction for general multiplication (multiplication by |2| involves only bit-shifting and is much cheaper).
 
 Specification of the problem is shown below.
 We declare two constants |A| and |B|, about them all we know is that they are both non-negative (as asserted in |assert (A >= 0 && B >= 0)|).
@@ -307,7 +239,7 @@ Guabao parses and analyses the code as it is typed into the editor.
 Once the code is pasted into Guabao, we will see:\\
 \sshotimg{sshot00}
 Guabao automatically expands the question mark |?| to a \emph{spec} — a hole in the program to be filled in, denoted by |[! ... !]|.
-The idea of a spec is inspired by Morgan~\cite{Morgan:90:Programming}, with a slight difference: in Morgan~\cite{Morgan:90:Programming} one starts program construction from a spec with given pre and postconditions, while in Guabao the pre and postconditions are inferred.
+The idea of a spec is inspired by Morgan~\cite{Morgan:90:Programming}, with a slight difference: in Morgan~\cite{Morgan:90:Programming} one starts program construction from a spec with given pre/postconditions, while in Guabao the pre/postconditions are inferred.
 The interface shows, on line 5 and 7, that code to be filled in shall bring the state of the system from precondition |True| to postcondition |r = A * B|. Properties of global constants (namely |A >= 0 && B >= 0|) are universally true and implicitly conjuncted with all assertions. They are displayed separately in a ``Property'' section in the right pane.
 
 \paragraph{Introducing a Loop}
@@ -328,13 +260,13 @@ When the cursor is in the spec, press {\tt ctrl-c-r} to fill in the spec.
 In the screenshot in the top of Figure~\ref{fig:sshot23}, the code typed into the hole becomes part of the program,
 while the question mark becomes a new hole.
 \footnote{This style of interaction (including the hot-key combination) is inspired by Agda.}
-The pre and postconditions are calculated from {\sf InvInd}.
+The pre/postconditions are calculated from {\sf InvInd}.
 %\\\sshotimg{sshot02}\\
 
 \begin{figure}
 \sshotimg{sshot02}\\
 \sshotimg{sshot03}
-\caption{Top: after introducing a loop. The proof obligations come respectively from {\sf InvBase} and {\sf TermBase}. Pre and postconditions of the spec are from {\sf InvInd}. Bottom: clicking on the hash introduces a proof block.}
+\caption{Top: after introducing a loop. The POs come respectively from {\sf InvBase} and {\sf TermBase}. Pre/postconditions of the spec are from {\sf InvInd}. Bottom: clicking on the hash introduces a proof block.}
 \label{fig:sshot23}
 \end{figure}
 
@@ -343,27 +275,27 @@ Let us get a closer look at the interface of Guabao.
 %Now it is a good time to inspect the interface of Guabao.
 In the program in the left pane,
 blue shade in the code indicates ``there are proof obligations incurred here.''
-Program locations associated with more proof obligations get a thicker shade.
+Program locations associated with more POs get a thicker shade.
 The right pane contains information including
 \begin{itemize}
-\item inferred proof obligations,
-\item pre and postconditions of specs,
+\item inferred POs,
+\item pre/postconditions of specs,
 \item global properties, etc.
 \end{itemize}
-Since the number of proof obligations can be large, in the right pane we display those on the path of the current location of the cursor.
+Since the number of POs can be large, in the right pane we display those on the path of the current location of the cursor.
 In Figure~\ref{fig:sshot23}, the cursor is at line 7, beginning of the loop.
-Proof obligations in the right pane include:
+POs in the right pane include:
 \begin{spec}
 a * b + r = A * B  && not  (b /= 0)   ==>  r = A * B  {-"~~, \mbox{which is {\sf InvBase}, and}"-}
 a * b + r = A * B  &&      b /= 0     ==>  b >= 0     {-"~~, \mbox{which is {\sf TermBase}}."-}
 \end{spec}
 %The first one is aforementioned {\sf InvBase}, while the second is {\sf TermBase}.
 
-Each proof obligation comes with a hash key. Clicking on the hash key for the first proof obligation, for example, results in the screenshot in the bottom of Figure~\ref{fig:sshot23}.
+Each PO comes with a hash key. Clicking on the hash key for the first PO, for example, results in the screenshot in the bottom of Figure~\ref{fig:sshot23}.
 %\\\sshotimg{sshot03}\\
 A new comment block having the hash key is added to the bottom of the code, in which the programmer can write up a proof of the corresponding property.
-A program is proven correct if all proof obligations are proved.
-Hash key of a proof obligation with a proof block is displayed in blue (see the top-right corner).
+A program is proven correct if all POs are proved.
+Hash key of a PO with a proof block is displayed in blue (see the top-right corner).
 Currently the system makes no attempt to check these proofs, however.
 They are just comments for the user.
 
@@ -371,7 +303,7 @@ Once we start doing the proofs, it immediately turns out that we cannot prove {\
 \begin{spec}
  a * b + r = A * B  &&  b >= 0 {-"~~."-}
 \end{spec}
-After the user updates the invariant, the proof obligations and the specs are updated accordingly.
+After the user updates the invariant, the POs and the specs are updated accordingly.
 
 \paragraph{Constructing the Loop Body}
 Now we attempt to construct the loop body.
@@ -433,9 +365,8 @@ OD
 \end{spec}
 
 \paragraph{Totalising |IF|}
-We are not done yet. Among all the proof obligations we will be asked to prove that |IF| is total --- every possible case is covered.
-Therefore we need to think about what to do in the |odd b| case. For this case we might decrease |b| by |b := b - 1|. By a similar process we can construct what to do with |a| and |r| in this case to maintain the invariant. A possible final program would be
-(omitting the declarations):
+We are not done yet. Among all the POs we will be asked to prove that |IF| is total --- every possible case is covered.
+Therefore we need to think about what to do in the |odd b| case. For this case we might decrease |b| by |b := b - 1|. By a similar process we can construct what to do with |a| and |r| in this case to maintain the invariant. A possible final program would be (omitting the declarations):
 \begin{spec}
 a, b, r := A, B, 0
 (assert (a * b + r = A * B && b >= 0, bnd: b))
@@ -449,7 +380,7 @@ OD
 \end{spec}
 which computes |A * B| using $O(\log B)$ atomic arithmetic operations.
 
-But that is not the only possible program. One might also decide to do nothing in the |odd b| case and always decrease |b| regardless of its parity, resulting in
+But that is not the only possible program. One might decide to do nothing in the |odd b| case and always decrease |b| regardless of its parity, resulting in:
 
 \begin{spec}
 a, b, r := A, B, 0
@@ -461,16 +392,16 @@ DO b /= 0 ->  r := a + r
               |   odd b ->   skip
               FI
 OD
-(assert (r = A * B))
+(assert (r = A * B)) {-"~~."-}
 \end{spec}
-The program is correct as long as one can prove all the proof obligations.
+The program is correct as long as one can prove all the POs.
 
 \paragraph{Summary}
 Let us recapitulate the interaction between a program and its proof in this example.
-Certainly, the program determines what ought to be proved --- introducing a statement also introduces corresponding proof obligations.
-Meanwhile, these proof obligations also gave hints on how to proceed with program construction.
-One may design the program --- for example, choosing the loop guard or choosing a method to decrease the bound --- such that some obligations are trivial to prove.
-Pre and postconditions of a spec, inferred from future proof obligations, shows what a piece of code is supposed to do.
+Certainly, the program determines what ought to be proved --- introducing a statement also introduces corresponding POs.
+Meanwhile, these POs also gave hints on how to proceed with program construction.
+One may design the program --- for example, choosing the loop guard or choosing a method to decrease the bound --- such that some POs are trivial to discharge.
+Pre/postconditions of a spec, inferred from future POs, shows what a piece of code is supposed to do.
 By observing what is missing in an attempted proof, one may learn how to strengthen the loop invariant, to enclose the program fragment in a guard, or learn that the current choice is simply wrong.
 The interface of Guabao aims to encourage such interaction.
 
@@ -486,15 +417,220 @@ The interface of Guabao aims to encourage such interaction.
 %      \end{subfigure}
 % \end{figure}
 
+\section{Behind the Scenes}
+
+A central part of the backend of Guabao is an engine that scans through the code, generates a collection of POs, and infers the pre/post conditions of specs.
+In this section we examine the design of this engine.
+
+When seeing a Hoare triple |htriple P S Q|, the Guabao uses a function |struct P S Q|, summarised in Figure~\ref{fig:struct}, to generate POs.
+To understand it, however, we shall start with some discussion on the interplay between assertions and POs.
+
+\paragraph{Weakest preconditions}
+It is known that for every statement |S| one can compute |wp S Q|, its weakest precondition with respect to postcondition |Q|.
+Our definition of |wp| is shown in Figure~\ref{fig:wp}.
+The first few cases are standard: |wp abort Q| is always |False|, |wp skip| is the identity function, and |wp (x := e)| is substitution --- |Q (subst x e)| denotes substituting all free occurrences of |x| in |Q| by |e|.
+The cases for |if| and |do| statements are also standard --- for clarity we present instances containing two guarded commands.
+
+A sequence of statements |S0; ..; Sn| operationally denotes performing the statements in the given order.
+We extend the notion to allow assertions and specs in the sequence.
+In the patterns between line \ref{code:wp:seq:0} -- \ref{code:wp:seq:3} in Figure~\ref{fig:wp},
+|({P} Ss)| denote a sequence starting with an assertion,
+|(eSpec Ss)| one starting with a spec,
+and |(s; ss)| a sequence starting with a non-sequent statement followed by sequence |ss|.
+An empty sequence is denoted by |eps|, and |wp eps| is the identity function.
+For the |(s;ss)| case, we have the standard definition |wp (s; ss) Q = wp s (wp ss Q)|.
+
+The last two cases on line \ref{code:wp:seq:2} -- \ref{code:wp:seq:3} reveal that |wp| actually returns a monadic value.
+For brevity we have pretended that |wp| returns a pure value in simpler cases,
+omitted the Haskell-ish |do| keyword,
+and spelled out the keyword |return| only when it follows an effectful operation.
+More about these two cases will be discussed later.
+
+\begin{figure}[t]
+\numberson
+\begin{spec}
+wp abort     Q = False
+wp skip      Q = skip
+wp (x := e)  Q = Q (subst x e)
+wp (IF B0 -> S0  | B1 -> S1 FI) Q  =
+  (B0 || B1) && (B0 => wp S0 Q) && (B1 => wp S1 Q)
+wp (DO B_i -> S_i OD)  Q = ??
+
+wp eps      Q = Q                            {-"\label{code:wp:seq:0}"-}
+wp (s; ss)  Q = wp s (wp ss Q)
+
+wp ({P} Ss)    Q = struct P Ss Q; return P      {-"\label{code:wp:seq:2}"-}
+wp (eSpec Ss)  Q =  Q' <- wp Ss Q               {-"\label{code:wp:seq:3}"-}
+                    tellSpec [!Q', Q'!]
+                    return Q'
+\end{spec}
+%wp (IF B0 -> S0  | B1 -> S1 FI) Q  = (B0 || B1) && (Bi => wp Si Q)
+
+\numbersoff
+\numbersreset
+\caption{The weakest precondition predicate transformer.}
+\label{fig:wp}
+\end{figure}
+
+\paragraph{Assertions and POs}
+The conventional definition of a Hoare triple is |htriple P S Q {-"\,"-}= {-"\,"-} (P ==> wp S Q)|.
+Main programs in Guabao also come in the form |htriple P S Q|.
+To establish the correctness of a completed program we could simply let the PO be the monolithic property |P ==> wp S Q|.
+This is not helpful for program construction, however.
+We wish to produce POs that give hints to to each program component that needs to be constructed.
+PO generation is therefore an design issue:
+we want to generate POs that are useful for program construction, and moderate in size and number.
+
+Assertions represent intentions of programmers, and we think they should trigger creation of POs. For example, given the program fragment below:
+\begin{spec}
+htriple2 P (S0; S1) R (S2; S3) Q  {-"~~,"-}
+\end{spec}
+where |S0| -- |S3| are statements containing no assertions or specs,
+we emit two POs: |R ==> wp S2 (wp S3 Q)|, and
+|P ==> wp S0 (wp S1 R)|.
+That is, we assume that |R|, an assertion intentionally left there by the programmer, represents all what the programmer wishes to establish at this point and contains all the information about the current state needed to prove the program correct.
+Note that this is stronger than the traditional definition:
+|wp (assert R) Q = R && Q|.
+Consider the following programs (assuming |x, z : Int|):
+\begin{spec}
+{-"{\sf P}_0:\qquad"-}  { z > x } x := z - x; x := x / 2 { x >= 0 } {-"~~,"-}
+{-"{\sf P}_1:\qquad"-}  { z > x } x := z - x { x > 0 } x := x / 2 { x >= 0 } {-"~~,"-}
+{-"{\sf P}_2:\qquad"-}  { z > x } x := z - x { True } x := x / 2 { x >= 0 } {-"~~."-}
+\end{spec}
+Program ${\sf P}_0$ generates one PO: |z > x ==> (z-x)/2 >= 0|, while ${\sf P}_1$ generates two POs: |x > 0 ==> x/2 >= 0| and |z > x ==> z - x > 0|.
+All of them can easily be discharged.
+In contrast, while ${\sf P}_2$ is a valid program in the traditional setting, Guabao would generate an unprovable PO: |True ==> x/2 >= 0| (and a trivial PO: |z > x ==> True|).
+We believe that this is suitable for Guabao, which is not designed to prove programs in general, but to construct programs with an intention in mind.
+
+It is also worth noting that, while some tools for program construction demand programmers to specify intermediate conditions between every sequenced statements (that is, to construct |htriple P (S0; S1) Q| the user has to provide |R| such that |htriple2 P S0 R S1 Q| holds),
+this is not so in Guabao. Instead, weakest preconditions are accumulated until we meet a programmer-inserted assertion, where we emit a PO.
+
+Having assertions helps to generate more specific POs.
+For example, the weakest precondition of an |IF|-statement with two branches is defined by:
+\begin{spec}
+ wp (IF B0 -> S0 | B1 -> S1 FI) Q =
+   (B0 || B1) && (B0 ==> wp S0 Q) && (B1 ==> wp S1 Q) {-"~~."-}
+\end{spec}
+%Abbreviate |IF B0 -> S0 || B1 -> S1 FI| to |iif|.
+Given the following program fragment:
+%format iif = "\Conid{IF}"
+\begin{spec}
+htriple2 P S R (IF B0 -> S0 | B1 -> S1 FI) Q {-"~~,"-}
+\end{spec}
+our algorithm in Guabao generates the following POs:
+\begin{enumerate}
+\item |R && B0 ==> wp S0 Q|,
+\item |R && B1 ==> wp S1 Q|,
+\item |R => B0 |||| B1|, all of them being consequences of the |wp| definition above, and
+\item |P ==> wp S R|, due to |htriple P S R|.
+\end{enumerate}
+%alone with |P ==> wp S R|.
+Without the assertion |{R}| in the middle,
+Guabao would have to generate one PO: |P ==> wp S (wp (IF B0 -> S0 || B1 -> S1 FI) Q)|.
+The size of this expression would multiply if |S| happen to be an |IF ... FI| too.
+
+\paragraph{PO generation}
+Let us now examine the function |struct P S Q|, presented in Figure~\ref{fig:struct}, which Guabao calls to compute POs when seeing a Hoare triple |htriple P S Q|.
+It is a function running in a writer monad with two methods:
+|tellPO P| announces a proof obligation |P|, while |tellSpec [!P, Q!]| announces a spec with inferred precondition |P| and postcondition |Q|.
+
+The case for |IF ... FI| is as explained before:
+we output a PO: |P ==> B0 |||| B1|, while recursively compute POs for the two branches with updated precondition |P && Bi|.
+In the case for |DO ... OD|,
+lines~\ref{code:struct:do:0} -- \ref{code:struct:do:3}
+respectively correspond to {\sf InvBase}, {\sf InvInd}, {\sf TermBase}, and {\sf TermInd} discussed in Section~\ref{sec:gcl}.
+More discussion about line \ref{code:struct:do:3} for {\sf TermInd} will be given later.
+For other simple, non-sequence statements we fall back to |P ==> wp S Q| (line~\ref{code:struct:simp}).
+
+\begin{figure}[t]
+\numberson
+\begin{spec}
+struct P (IF B0 -> S0 | B1 -> S1 FI) Q =
+  tellPO (P ==> B0 || B1)
+  struct (P && B0) S0 Q; struct (P && B1) S1 Q
+
+struct (P,e) (DO B0 -> S0 | B1 -> S1 OD) Q =
+  tellPO (P && not (B0 || B1) ==> Q)         {-"\label{code:struct:do:0}"-}
+  struct (P && B0) S0 P; struct (P && B1) S1 P
+  tellPO (P && (B0 || B1) ==> b >= 0)
+  termInd P e B0 S0; termInd P e B1 S1
+{-"\label{code:struct:do:3}"-}
+
+struct P s Q = tellPO (P ==> wp s Q)  {-"\label{code:struct:simp}"-} -- other simple statements
+
+struct P eps Q     = tellPO (P ==> Q)        {-"\label{code:struct:seq:0}"-}
+struct P (s;ss) Q  = Q' <- wp ss Q; struct P s Q'  {-"\label{code:struct:seq:1}"-}
+
+struct P (ss {R} Ss) Q   = struct P ss R; struct R Ss Q     {-"\label{code:struct:seq:2}"-}
+struct P (ss eSpec Ss) Q  =  P' <- sp s P; Q' <- wp Ss Q;  {-"\label{code:struct:seq:3}"-}
+                            tellSpec [!P', Q'!]
+
+termInd P e B S =  if containsSpec S then return ()
+                        else  C <- newVar
+                              struct (P && B0 && e = C) (strip S) (e < C)
+\end{spec}
+% struct P ({R} ss) Q     = tellPO (P => R); struct R ss Q
+% struct P ([!!] ss) Q    = tellSpec [!P, wp ss Q !]
+% struct' (P && B0) S0 P; struct' (P && B1) S1 P {-"\label{code:struct:do:3}"-}
+\numbersoff
+\numbersreset
+\caption{The function |struct _ _ _|.}
+\label{fig:struct}
+\end{figure}
+
+The cases for sequences of statements are trickier.
+As discussed before, assertions are treated differently.
+Furthermore, we need to infer pre/postconditions for specs.
+Therefore we partition a sequence of statements into segments separated by assertions or specs, and process them segment-by-segment.
+We call a sequence \emph{simple} if it contains no assertions or specs.
+In the patterns between line~\ref{code:struct:seq:0} and \ref{code:struct:seq:3}, |ss| denotes a (possibly empty) simple sequence of statements, while |Ss| denotes a general sequence.
+Lines \ref{code:struct:seq:0} -- \ref{code:struct:seq:1} deal with simple sequences.
+For an empty sequence we simply emit |P ==> Q|.
+For |(s;ss)|, we compute |wp ss Q|, and let it be the postcondition for |s|.
+
+When the first simple segment |ss| is separated from the rest |Ss| by an assertion |{R}| (line \ref{code:struct:seq:2}), we recursively compute |struct P ss R| and |struct R Ss Q|.
+
+%format ss0
+%format ss1
+%format ss2
+
+Line \ref{code:struct:seq:3} deals with the case |(ss eSpec Ss)|, that is,
+when a simple sequence |ss| is separated from |Ss| by a spec.
+We have to compute the pre/postconditions of the spec.
+Denote |wp Ss Q| by |Q'|.
+Note that computation of |wp Ss Q| could in turn trigger evocations of |struct _ _ _| when there are assertions in |Ss| --- such cases would be caught by line \ref{code:wp:seq:2} of Figure~\ref{fig:wp}.
+It is valid if we generate |ss [!Q', Q'!] Ss|, that is, Guabao could instruct the user to fill in a program that expects |Q'| to be established and maintain |Q'| upon completion (we would then demand the programmer to prove |htriple P s Q'|).
+This is usually not very helpful, however.
+Instead, we compute the \emph{strongest postcondition} of |s| with respect to |P|, and use that as the precondition of the spec.
+The function |sp| that computes the strongest postcondition is defined in Figure~\ref{fig:sp}.
+When specs appears consecutively (e.g. |ss0 eSpec ss1 eSpec ss2|), we will run into the last case of |wp| (line \ref{code:wp:seq:3} of Figure~\ref{fig:wp}), where we have no choice but create |[!Q,Q!]|.
+
+\begin{figure}[t]
+\begin{spec}
+sp abort  P     = True
+sp skip   P     = P
+sp (x := e) P  = (exquant x' () (x = E (subst x x') && P (subst x x')))
+sp (IF B0 -> S0  | B1 -> S1 FI)  P = OR (sp Si (P && Bi))
+sp (DO B0 -> S0  | B1 -> S1 OD)  P =
+  struct P (do B0 -> S0 | B1 -> S1 od) (P && not (B0 || B1));
+  return (P && not (B0 || B1))
+
+sp eps P      = P
+sp (s; ss) P  = sp ss (sp s P)
+sp (ss {Q} Ss)    P = struct P ss Q; sp Q Ss
+sp (ss eSpec Ss)  P = tellSpec [!P,P!]; sp P Ss
+\end{spec}
+\caption{The strongest postcondition predicate transformer.}
+\label{fig:sp}
+\end{figure}
+
+There is one final issue. \todo{explain |termInd|.}
+
 \cite{Runge:19:Tool}
 \cite{Leino:14:Dafny}
 \cite{Chaudhari:15:Building}
 
-\section{Behind the Scenes}
-
-\begin{spec}
-wp abort =
-\end{spec}
+\section{Related Works}
 
 \subsubsection{Acknowledgements} Please place your acknowledgments at
 the end of the paper, preceded by an unnumbered run-in heading (i.e.
