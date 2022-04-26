@@ -422,11 +422,13 @@ The interface of Guabao aims to encourage such interaction.
 A central part of the backend of Guabao is an engine that scans through the code, generates a collection of POs, and infers the pre/post conditions of specs.
 In this section we examine the design of this engine.
 
-When seeing a Hoare triple |htriple P S Q|, the Guabao uses a function |struct P S Q|, summarised in Figure~\ref{fig:struct}, to generate POs.
+When seeing a Hoare triple |htriple P S Q|, Guabao invokes the ternary function |struct _ _ _|, summarised in Figure~\ref{fig:struct}, to generate POs.
 To understand it, however, we shall start with some discussion on the interplay between assertions and POs.
+\todo{Briefly describe the relation of wp, assertions and PO}
+%something like: "The algorithm generating POs is described below: it involves the concept of weakest precondition and how the programmer places the assertions among the program"
 
 \paragraph{Weakest preconditions}
-It is known that for every statement |S| one can compute |wp S Q|, its weakest precondition with respect to postcondition |Q|.
+It is known that for every statement |S|, one can compute |wp S Q|, its weakest precondition with respect to postcondition |Q|.
 Our definition of |wp| is shown in Figure~\ref{fig:wp}.
 The first few cases are standard: |wp abort Q| is always |False|, |wp skip| is the identity function, and |wp (x := e)| is substitution --- |Q (subst x e)| denotes substituting all free occurrences of |x| in |Q| by |e|.
 The cases for |if| and |do| statements are also standard --- for clarity we present instances containing two guarded commands.
@@ -434,17 +436,23 @@ The cases for |if| and |do| statements are also standard --- for clarity we pres
 A sequence of statements |S0; ..; Sn| operationally denotes performing the statements in the given order.
 We extend the notion to allow assertions and specs in the sequence.
 In the patterns between line \ref{code:wp:seq:0} -- \ref{code:wp:seq:3} in Figure~\ref{fig:wp},
-|({P} Ss)| denote a sequence starting with an assertion,
-|(eSpec Ss)| one starting with a spec,
+|({P} Ss)| denotes a sequence starting with an assertion,
+|(eSpec Ss)| denotes one starting with a spec,
 and |(s; ss)| a sequence starting with a non-sequent statement followed by sequence |ss|.
 An empty sequence is denoted by |eps|, and |wp eps| is the identity function.
 For the |(s;ss)| case, we have the standard definition |wp (s; ss) Q = wp s (wp ss Q)|.
+\todo{Reorganize the paragraph}
+%something like: “The cases above are rules upon a single statement; since a program is usually constituted with a sequence of statements, we use the rules 7-10, to denote assertions and specs regarding a statement sequence. |({P} Ss)| denotes...”
 
 The last two cases on line \ref{code:wp:seq:2} -- \ref{code:wp:seq:3} reveal that |wp| actually returns a monadic value.
 For brevity we have pretended that |wp| returns a pure value in simpler cases,
 omitted the Haskell-ish |do| keyword,
 and spelled out the keyword |return| only when it follows an effectful operation.
 More about these two cases will be discussed later.
+\todo{Reorganize the paragraph}
+%something like: “|wp| is actually returning a monadic value. For brevity, we have pretended that |wp| returns a pure value in simpler cases(line1-8); when it involves effectful operations -- tellPO and tellSpec, which can be seen in the last two rules --, we explicitly spell out the keyword |return|, omitting the Haskell-ish |do| keyword.”
+
+% this is how I see the logical flow of these 3 paragraphs: from dealing with simple cases to its true, monadic nature.
 
 \begin{figure}[t]
 \numberson
@@ -474,14 +482,14 @@ wp (eSpec Ss)  Q =  Q' <- wp Ss Q               {-"\label{code:wp:seq:3}"-}
 
 \paragraph{Assertions and POs}
 The conventional definition of a Hoare triple is |htriple P S Q {-"\,"-}= {-"\,"-} (P ==> wp S Q)|.
-Main programs in Guabao also come in the form |htriple P S Q|.
+The main programs in Guabao also come in the form |htriple P S Q|.
 To establish the correctness of a completed program we could simply let the PO be the monolithic property |P ==> wp S Q|.
 This is not helpful for program construction, however.
 We wish to produce POs that give hints to to each program component that needs to be constructed.
 PO generation is therefore an design issue:
 we want to generate POs that are useful for program construction, and moderate in size and number.
 
-Assertions represent intentions of programmers, and we think they should trigger creation of POs. For example, given the program fragment below:
+Given a sequence of statements, how assertions are placed reflects the intention of the programmer. Therefore, in order to create "helpful" POs, we should take this into consideration. For example, given the program fragment below:
 \begin{spec}
 htriple2 P (S0; S1) R (S2; S3) Q  {-"~~,"-}
 \end{spec}
@@ -504,6 +512,8 @@ We believe that this is suitable for Guabao, which is not designed to prove prog
 
 It is also worth noting that, while some tools for program construction demand programmers to specify intermediate conditions between every sequenced statements (that is, to construct |htriple P (S0; S1) Q| the user has to provide |R| such that |htriple2 P S0 R S1 Q| holds),
 this is not so in Guabao. Instead, weakest preconditions are accumulated until we meet a programmer-inserted assertion, where we emit a PO.
+\todo{citation needed?}
+% It feels like usually, "while some tools for program construction demand..." needs a citation, I'm not sure if it's needed here.
 
 Having assertions helps to generate more specific POs.
 For example, the weakest precondition of an |IF|-statement with two branches is defined by:
@@ -587,6 +597,8 @@ In the patterns between line~\ref{code:struct:seq:0} and \ref{code:struct:seq:3}
 Lines \ref{code:struct:seq:0} -- \ref{code:struct:seq:1} deal with simple sequences.
 For an empty sequence we simply emit |P ==> Q|.
 For |(s;ss)|, we compute |wp ss Q|, and let it be the postcondition for |s|.
+\todo{a question}
+% I'm not sure if the concept of general sequence is a commonsense in this community... what does it precisely mean here? From what I can see, It looks just like ss...
 
 When the first simple segment |ss| is separated from the rest |Ss| by an assertion |{R}| (line \ref{code:struct:seq:2}), we recursively compute |struct P ss R| and |struct R Ss Q|.
 
