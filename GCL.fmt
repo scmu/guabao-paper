@@ -1,0 +1,130 @@
+%format VAR  = "\mathbf{var}"
+%format CON  = "\mathbf{con}"
+%format DO  = "\mathbf{do}"
+%format OD  = "\mathbf{od}"
+%format IF  = "\mathbf{if}"
+%format FI  = "\mathbf{fi}"
+%format BND  = "\mathbf{bnd}"
+%format AL  = "\mathbin{\lbrack\rbrack}"
+%format gbeg = "\mid\!\!\lbrack"
+%format gend = "\rbrack\!\!\mid"
+%format EXP x (y) = "{" x "}^{" y "}"
+%format (mod x y) = x "\mathbin{\mod}" y
+%format INF = "\infty"
+%format NINF = "{-\infty}"
+
+%format PROC = "\mathbf{proc}"
+
+%%format (assert (x)) = "\{" x "\}"
+%format (assert (x)) = "\assert{" x "}"
+   %% using \assert in macros.tex for coloring.
+%format `band` = "\mathbin{\wedge}"
+%format `bor` = "\mathbin{\vee}"
+
+%% Array
+
+%format (ranLr i j) = "\lbrack" i ".." j ")"
+%format (idx a i) = a "\lbrack" i "\rbrack"
+
+%format (quant (op) (ran) (trm)) = "\langle" op ":" ran ":" trm "\rangle"
+
+%format (exquant (vars) (ran) (trm)) = "\langle \exists" vars ":" ran ":" trm "\rangle"
+%format (forallquant (vars) (ran) (trm)) = "\langle \forall" vars ":" ran ":" trm "\rangle"
+%format (sumquant (vars) (ran) (trm)) = "\langle \Sigma" vars ":" ran ":" trm "\rangle"
+%format (maxquant (vars) (ran) (trm)) = "\langle \uparrow" vars ":" ran ":" trm "\rangle"
+%format (numquant (vars) (ran) (trm)) = "\langle \#" vars ":" ran ":" trm "\rangle"
+%format (starquant (vars) (ran) (trm)) = "\langle \star" vars ":" ran ":" trm "\rangle"
+%format (oplusquant (vars) (ran) (trm)) = "\langle \oplus" vars ":" ran ":" trm "\rangle"
+
+%format `star` = "\mathbin{\star}"
+
+%format (uncover (n) (xs)) = "\uncover<" n "->{" xs "}"
+
+%format (htriple (p) (s) (q)) = "\htriple{" p "}{" s "}{" q "}"
+
+%format (htriple2 (p) (s) (q) (t) (r)) = "\htripletwo{" p "}{" s "}{" q "}{" t "}{" r "}"
+
+%format (struct (p) (s) (q)) = "\lBrace" p "\rBrace\," s "\,\lBrace" q "\rBrace"
+ %\newcommand{\lBracP}{\lbrack\!\{}
+ % \newcommand{\rBracP}{\}\!\rbrack}
+\newcommand{\lBracP}{(\!\lbrack}
+\newcommand{\rBracP}{\rbrack\!)}
+ % \newcommand{\lBracP}{(\!\!\{}
+ % \newcommand{\rBracP}{\}\!\!)}
+%format (struct' (p) (s) (q)) = "\lBracP" p "\rBracP\," s "\,\lBracP" q "\rBracP"
+
+%%format (subst (x) (e)) = "\subst{" x "}{" e "}"
+
+%format (subst (x) (e)) = "\lbrack" x "\backslash" e "\rbrack"
+%format appsubst p (x) (e) = p "\lbrack" x "\backslash" e "\rbrack"
+
+%format ArrayCO (l) (r) t = "\mathbf{array}~[" l ".." r ")~\mathbf{of}~" t
+%format ArrayCC (l) (r) t = "\mathbf{array}~[" l ".." r "]~\mathbf{of}~" t
+%format arridx (a) (i) = a "\lbrack" i "\rbrack"
+%format (rangeCO (l) (r)) = "[" l ".." r ")"
+%format arrayCO h (l) (r) = h "[" l ".." r ")"
+
+\newcommand{\veryshortarrow}[1][3pt]{\mathrel{%
+   \hbox{\rule[\dimexpr\fontdimen22\textfont2-.2pt\relax]{#1}{.4pt}}%
+   \mkern-4mu\hbox{\usefont{U}{lasy}{m}{n}\symbol{41}}}}
+
+%format (funalt f (i) (e)) = "(" f "\!:\!" i "\!\veryshortarrow\!" e ")"
+%%format funalt f (i) (e) = f "\lbrack" i "\veryshortarrow" e "\rbrack"
+%%format funalt f (i) (e) = f "\lbrack" i "\rightharpoonup" e "\rbrack"
+%%format funalt f (i) (e) = f "\lbrack" i ":" e "\rbrack"
+
+%format abs (e) = "\lvert" e "\rvert"
+
+%% Pointers
+
+\newcommand{\shortmapsto}{\hstretch{0.6}{\mapsto}}
+\newcommand{\shookrarrow}{\hstretch{0.6}{\hookrightarrow}}
+
+%format CONS = "\mathbf{cons}"
+%format FREE = "\mathbf{free}"
+%format NIL = "\mathbf{nil}"
+%format (LKUP p) = "{}^{*\!}{" p "}"
+
+%format emptySet = "\emptyset"
+%format `bot` = "\mathbin{\bot}"
+
+%format EMP = "\mathbf{emp}"
+%format `sep` = "\mathbin{*}"
+
+%format `sunion` = "\mathbin{\cdot}"
+%format `mt` = "\mathrel{\shortmapsto}"
+%format `mtt` = "\mathrel{\shookrarrow}"
+%format `simp` = "\mathrel{{-}\!\!*}"
+
+%format eps = "\epsilon"
+%format eSpec = "\lbrack!~!\rbrack"
+
+%format S0
+%format S1
+%format S2
+%format S3
+%format B0
+%format B1
+%format P0
+%format P1
+%format Q0
+%format Q1
+%format B_n = "\Conid{B}_{\scriptsize\Varid{n}}"
+%format S_n = "\Conid{S}_{\Varid{n}}"
+%format B_n' = "\Conid{B}_{\scriptsize\Varid{n}-1}"
+%format S_n' = "\Conid{S}_{\Varid{n}-1}"
+%format B_i = "\Conid{B}_{i}"
+%format S_i = "\Conid{S}_{i}"
+%format Pf0 = "{\sf Pf_0}"
+%format Pf1 = "{\sf Pf_1}"
+%format Pf2 = "{\sf Pf_2}"
+%format Pf3 = "{\sf Pf_3}"
+%format Pf4 = "{\sf Pf_4}"
+
+%format h0
+%format h1
+%format h2
+%format e0
+%format e1
+%format e2
+%format e3
