@@ -506,7 +506,7 @@ The interface of Guabao should make such construction easy and natural.
 \item It allows {\bf free-form text editing}, as opposed to treating programs as diagrams as some program construction tools do, since we believe it what most programmers would prefer.
 \end{enumerate}
 In Section~\ref{sec:programming-example} we will see an example demonstrating all these features.
-It might also help to clarify what Guabao is not.
+It might also help to clarify what Guabao is not:
 \begin{enumerate}
 \item Gaubao is not an implementation of Guarded Command Language (GCL).
 Dijkstra~\cite{Dijkstra:98:Cruelty} wrote that he would
@@ -516,7 +516,7 @@ One cannot yet execute the program --- although it is not difficult to implement
 \item \todo{Guabao does not check your proof.}
 \end{enumerate}
 
-Currently, Guabao is implemented as an extension of the editor Visual Code Studio,
+Currently, Guabao is implemented as an extension of the editor Visual Studio Code,
 which can be installed by searching for the extension "Guabao" in the editor, or through its Extensions Marketplace~\footnote{\url{https://marketplace.visualstudio.com/items?itemName=scmlab.guabao}}.
 A simple one-click installation downloads the frontend and the pre-compiled backend.
 %The readers are welcomed to give it a try!
@@ -970,11 +970,13 @@ The interface of Guabao aims to encourage such interaction.
 A central part of the backend of Guabao is an engine that scans through the code, generates a collection of POs, and infers the pre/post conditions of specs.
 In this section we examine the design of this engine.
 
-When seeing a Hoare triple \ensuremath{\htriple{\Conid{P}}{\Conid{S}}{\Conid{Q}}}, the Guabao uses a function \ensuremath{\lBrace\Conid{P}\rBrace\,\Conid{S}\,\lBrace\Conid{Q}\rBrace}, summarised in Figure~\ref{fig:struct}, to generate POs.
+When seeing a Hoare triple \ensuremath{\htriple{\Conid{P}}{\Conid{S}}{\Conid{Q}}}, Guabao invokes the ternary function \ensuremath{\lBrace\anonymous \rBrace\,\anonymous \,\lBrace\anonymous \rBrace}, summarised in Figure~\ref{fig:struct}, to generate POs.
 To understand it, however, we shall start with some discussion on the interplay between assertions and POs.
+\todo{Briefly describe the relation of wp, assertions and PO}
+%something like: "The algorithm generating POs is described below: it involves the concept of weakest precondition and how the programmer places the assertions among the program"
 
 \paragraph{Weakest preconditions}
-It is known that for every statement \ensuremath{\Conid{S}} one can compute \ensuremath{\Varid{wp}\;\Conid{S}\;\Conid{Q}}, its weakest precondition with respect to postcondition \ensuremath{\Conid{Q}}.
+It is known that for every statement \ensuremath{\Conid{S}}, one can compute \ensuremath{\Varid{wp}\;\Conid{S}\;\Conid{Q}}, its weakest precondition with respect to postcondition \ensuremath{\Conid{Q}}.
 Our definition of \ensuremath{\Varid{wp}} is shown in Figure~\ref{fig:wp}.
 The first few cases are standard: \ensuremath{\Varid{wp}\;\Varid{abort}\;\Conid{Q}} is always \ensuremath{\Conid{False}}, \ensuremath{\Varid{wp}\;\Varid{skip}} is the identity function, and \ensuremath{\Varid{wp}\;(\Varid{x}\mathbin{:=}\Varid{e})} is substitution --- \ensuremath{\Conid{Q}\;\lbrack\Varid{x}\backslash\Varid{e}\rbrack} denotes substituting all free occurrences of \ensuremath{\Varid{x}} in \ensuremath{\Conid{Q}} by \ensuremath{\Varid{e}}.
 The cases for \ensuremath{\mathbf{if}} and \ensuremath{\mathbf{do}} statements are also standard --- for clarity we present instances containing two guarded commands.
@@ -982,17 +984,23 @@ The cases for \ensuremath{\mathbf{if}} and \ensuremath{\mathbf{do}} statements a
 A sequence of statements \ensuremath{\Conid{S}_{0};\mathinner{\ldotp\ldotp};\Conid{Sn}} operationally denotes performing the statements in the given order.
 We extend the notion to allow assertions and specs in the sequence.
 In the patterns between line \ref{code:wp:seq:0} -- \ref{code:wp:seq:3} in Figure~\ref{fig:wp},
-\ensuremath{(\{\mskip1.5mu \Conid{P}\mskip1.5mu\}\;\Conid{Ss})} denote a sequence starting with an assertion,
-\ensuremath{(\lbrack!~!\rbrack\;\Conid{Ss})} one starting with a spec,
+\ensuremath{(\{\mskip1.5mu \Conid{P}\mskip1.5mu\}\;\Conid{Ss})} denotes a sequence starting with an assertion,
+\ensuremath{(\lbrack!~!\rbrack\;\Conid{Ss})} denotes one starting with a spec,
 and \ensuremath{(\Varid{s};\Varid{ss})} a sequence starting with a non-sequent statement followed by sequence \ensuremath{\Varid{ss}}.
 An empty sequence is denoted by \ensuremath{\epsilon}, and \ensuremath{\Varid{wp}\;\epsilon} is the identity function.
 For the \ensuremath{(\Varid{s};\Varid{ss})} case, we have the standard definition \ensuremath{\Varid{wp}\;(\Varid{s};\Varid{ss})\;\Conid{Q}\mathrel{=}\Varid{wp}\;\Varid{s}\;(\Varid{wp}\;\Varid{ss}\;\Conid{Q})}.
+\todo{Reorganize the paragraph}
+%something like: “The cases above are rules upon a single statement; since a program is usually constituted with a sequence of statements, we use the rules 7-10, to denote assertions and specs regarding a statement sequence. |({P} Ss)| denotes...”
 
 The last two cases on line \ref{code:wp:seq:2} -- \ref{code:wp:seq:3} reveal that \ensuremath{\Varid{wp}} actually returns a monadic value.
 For brevity we have pretended that \ensuremath{\Varid{wp}} returns a pure value in simpler cases,
 omitted the Haskell-ish \ensuremath{\mathbf{do}} keyword,
 and spelled out the keyword \ensuremath{\Varid{return}} only when it follows an effectful operation.
 More about these two cases will be discussed later.
+\todo{Reorganize the paragraph}
+%something like: “|wp| is actually returning a monadic value. For brevity, we have pretended that |wp| returns a pure value in simpler cases(line1-8); when it involves effectful operations -- tellPO and tellSpec, which can be seen in the last two rules --, we explicitly spell out the keyword |return|, omitting the Haskell-ish |do| keyword.”
+
+% this is how I see the logical flow of these 3 paragraphs: from dealing with simple cases to its true, monadic nature.
 
 \begin{figure}[t]
 \numberson
@@ -1060,14 +1068,14 @@ More about these two cases will be discussed later.
 
 \paragraph{Assertions and POs}
 The conventional definition of a Hoare triple is \ensuremath{\htriple{\Conid{P}}{\Conid{S}}{\Conid{Q}}\,\mathrel{=}\,(\Conid{P}\mathrel{\Rightarrow}\Varid{wp}\;\Conid{S}\;\Conid{Q})}.
-Main programs in Guabao also come in the form \ensuremath{\htriple{\Conid{P}}{\Conid{S}}{\Conid{Q}}}.
+The main programs in Guabao also come in the form \ensuremath{\htriple{\Conid{P}}{\Conid{S}}{\Conid{Q}}}.
 To establish the correctness of a completed program we could simply let the PO be the monolithic property \ensuremath{\Conid{P}\mathrel{\Rightarrow}\Varid{wp}\;\Conid{S}\;\Conid{Q}}.
 This is not helpful for program construction, however.
 We wish to produce POs that give hints to to each program component that needs to be constructed.
 PO generation is therefore an design issue:
 we want to generate POs that are useful for program construction, and moderate in size and number.
 
-Assertions represent intentions of programmers, and we think they should trigger creation of POs. For example, given the program fragment below:
+Given a sequence of statements, how assertions are placed reflects the intention of the programmer. Therefore, in order to create "helpful" POs, we should take this into consideration. For example, given the program fragment below:
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{35}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -1104,6 +1112,8 @@ We believe that this is suitable for Guabao, which is not designed to prove prog
 
 It is also worth noting that, while some tools for program construction demand programmers to specify intermediate conditions between every sequenced statements (that is, to construct \ensuremath{\htriple{\Conid{P}}{\Conid{S}_{0};\Conid{S}_{1}}{\Conid{Q}}} the user has to provide \ensuremath{\Conid{R}} such that \ensuremath{\htripletwo{\Conid{P}}{\Conid{S}_{0}}{\Conid{R}}{\Conid{S}_{1}}{\Conid{Q}}} holds),
 this is not so in Guabao. Instead, weakest preconditions are accumulated until we meet a programmer-inserted assertion, where we emit a PO.
+\todo{citation needed?}
+% It feels like usually, "while some tools for program construction demand..." needs a citation, I'm not sure if it's needed here.
 
 Having assertions helps to generate more specific POs.
 For example, the weakest precondition of an \ensuremath{\mathbf{if}}-statement with two branches is defined by:
@@ -1144,10 +1154,8 @@ It is a function running in a writer monad with two methods:
 
 The case for \ensuremath{\mathbf{if}\mathbin{...}\mathbf{fi}} is as explained before:
 we output a PO: \ensuremath{\Conid{P}\mathrel{\Rightarrow}\Conid{B}_{0}\mathrel{\vee}\Conid{B}_{1}}, while recursively compute POs for the two branches with updated precondition \ensuremath{\Conid{P}\mathrel{\wedge}\Conid{Bi}}.
-In the case for \ensuremath{\mathbf{do}\mathbin{...}\mathbf{od}},
-lines~\ref{code:struct:do:0} -- \ref{code:struct:do:3}
-respectively correspond to {\sf InvBase}, {\sf InvInd}, {\sf TermBase}, and {\sf TermInd} discussed in Section~\ref{sec:gcl}.
-More discussion about line \ref{code:struct:do:3} for {\sf TermInd} will be given later.
+The case for \ensuremath{\mathbf{do}\mathbin{...}\mathbf{od}} will be discussed later.
+%More discussion about line \ref{code:struct:do:3} for {\sf TermInd} will be given later.
 For other simple, non-sequence statements we fall back to \ensuremath{\Conid{P}\mathrel{\Rightarrow}\Varid{wp}\;\Conid{S}\;\Conid{Q}} (line~\ref{code:struct:simp}).
 
 \begin{figure}[t]
@@ -1164,6 +1172,7 @@ For other simple, non-sequence statements we fall back to \ensuremath{\Conid{P}\
 \column{30}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{31}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{39}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{41}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{46}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{52}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{60}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -1190,9 +1199,8 @@ For other simple, non-sequence statements we fall back to \ensuremath{\Conid{P}\
 \>[3]{}\Varid{tellPO}\;(\Conid{P}\mathrel{\wedge}(\Conid{B}_{0}\mathrel{\vee}\Conid{B}_{1})\mathrel{\Rightarrow}\Varid{b}\geq \mathrm{0}){}\<[E]%
 \printlineend\\
 \printlinebegin\>[B]{}\hsindent{3}{}\<[3]%
-\>[3]{}\Varid{termInd}\;\Conid{P}\;\Varid{e}\;\Conid{B}_{0}\;\Conid{S}_{0};\Varid{termInd}\;\Conid{P}\;\Varid{e}\;\Conid{B}_{1}\;\Conid{S}_{1}{}\<[E]%
-\printlineend\\
-\printlinebegin\>[B]{}\label{code:struct:do:3}{}\<[E]%
+\>[3]{}\Varid{termInd}\;\Conid{P}\;\Varid{e}\;\Conid{B}_{0}\;\Conid{S}_{0};\Varid{termInd}\;\Conid{P}\;\Varid{e}\;\Conid{B}_{1}\;\Conid{S}_{1}{}\<[41]%
+\>[41]{}\label{code:struct:do:3}{}\<[E]%
 \printlineend\\[\blanklineskip]%
 \printlinebegin\>[B]{}\lBrace\Conid{P}\rBrace\,\Varid{s}\,\lBrace\Conid{Q}\rBrace\mathrel{=}\Varid{tellPO}\;(\Conid{P}\mathrel{\Rightarrow}\Varid{wp}\;\Varid{s}\;\Conid{Q}){}\<[39]%
 \>[39]{}\label{code:struct:simp}\mbox{\onelinecomment  other simple statements}{}\<[E]%
@@ -1224,7 +1232,7 @@ For other simple, non-sequence statements we fall back to \ensuremath{\Conid{P}\
 \>[25]{}\mathbf{else}\;{}\<[31]%
 \>[31]{}\Conid{C}\leftarrow \Varid{newVar}{}\<[E]%
 \printlineend\\
-\printlinebegin\>[31]{}\lBrace\Conid{P}\mathrel{\wedge}\Conid{B}_{0}\mathrel{\wedge}\Varid{e}\mathrel{=}\Conid{C}\rBrace\,\Varid{strip}\;\Conid{S}\,\lBrace\Varid{e}\mathbin{<}\Conid{C}\rBrace{}\<[E]%
+\printlinebegin\>[31]{}\lBrace\Conid{P}\mathrel{\wedge}\Conid{B}\mathrel{\wedge}\Varid{e}\mathrel{=}\Conid{C}\rBrace\,\Varid{strip}\;\Conid{S}\,\lBrace\Varid{e}\mathbin{<}\Conid{C}\rBrace{}\<[E]%
 \printlineend\ColumnHook
 \end{hscode}\resethooks
 % struct P ({R} ss) Q     = tellPO (P => R); struct R ss Q
@@ -1245,6 +1253,8 @@ In the patterns between line~\ref{code:struct:seq:0} and \ref{code:struct:seq:3}
 Lines \ref{code:struct:seq:0} -- \ref{code:struct:seq:1} deal with simple sequences.
 For an empty sequence we simply emit \ensuremath{\Conid{P}\mathrel{\Rightarrow}\Conid{Q}}.
 For \ensuremath{(\Varid{s};\Varid{ss})}, we compute \ensuremath{\Varid{wp}\;\Varid{ss}\;\Conid{Q}}, and let it be the postcondition for \ensuremath{\Varid{s}}.
+\todo{a question}
+% I'm not sure if the concept of general sequence is a commonsense in this community... what does it precisely mean here? From what I can see, It looks just like ss...
 
 When the first simple segment \ensuremath{\Varid{ss}} is separated from the rest \ensuremath{\Conid{Ss}} by an assertion \ensuremath{\{\mskip1.5mu \Conid{R}\mskip1.5mu\}} (line \ref{code:struct:seq:2}), we recursively compute \ensuremath{\lBrace\Conid{P}\rBrace\,\Varid{ss}\,\lBrace\Conid{R}\rBrace} and \ensuremath{\lBrace\Conid{R}\rBrace\,\Conid{Ss}\,\lBrace\Conid{Q}\rBrace}.
 
@@ -1314,13 +1324,59 @@ When specs appears consecutively (e.g. \ensuremath{\Varid{ss}_{0}\;\lbrack!~!\rb
 \label{fig:sp}
 \end{figure}
 
-There is one final issue. \todo{explain \ensuremath{\Varid{termInd}}.}
+Finally, let us talk about the case for \ensuremath{\mathbf{do}\mathbin{...}\mathbf{od}}.
+Lines~\ref{code:struct:do:0} -- \ref{code:struct:do:3} in Figure~\ref{fig:struct}
+respectively correspond to {\sf InvBase}, {\sf InvInd}, {\sf TermBase}, and {\sf TermInd} discussed in Section~\ref{sec:gcl}.
+The last case is the most tricky.
+Recall that, according to {\sf TermInd},
+for each \ensuremath{\Conid{B}_{i}\to \Conid{S}_{i}} the programmer shall prove that \ensuremath{\htriple{\Conid{P}\mathrel{\wedge}\Conid{B}_{i}\mathrel{\wedge}\Varid{e}\mathrel{=}\Conid{C}}{\Conid{S}_{i}}{\Varid{e}\mathbin{<}\Conid{C}}}.
+One may want to naively make a call to \ensuremath{\lBrace\Conid{P}\mathrel{\wedge}\Conid{B}_{i}\mathrel{\wedge}\Varid{e}\mathrel{=}\Conid{C}\rBrace\,\Conid{S}_{i}\,\lBrace\Varid{e}\mathbin{<}\Conid{C}\rBrace}.
+However, notice that \ensuremath{\Conid{C}} is a fresh logical variable, and that \ensuremath{\Conid{S}_{i}} may contain assertions, which cannot mention \ensuremath{\Conid{C}}.
+As a result Guabao may end up generating unprovable POs, or produce impossible pre/postconditions for specs.
 
-\cite{Runge:19:Tool}
-\cite{Leino:14:Dafny}
-\cite{Chaudhari:15:Building}
+To get around the problem, the helper function \ensuremath{\Varid{termInd}} returns nothing if the loop body \ensuremath{\Conid{S}} contains specs --- we postpone generating all POs until the program is finished. If \ensuremath{\Conid{S}} contains no specs, we generate a fresh logical variable \ensuremath{\Conid{C}}, and applies \ensuremath{\lBrace\anonymous \rBrace\,\anonymous \,\lBrace\anonymous \rBrace} to \ensuremath{\Varid{strip}\;\Conid{S}} --- which denotes \ensuremath{\Conid{S}} with all assertions removed.
 
 \section{Related Works}
+
+Before and during development of Guabao, we surveyed a number of projects designed for similar goals.
+It is worth comparing their design choices and consequences.
+
+CorC \cite{Schaefer:18:CorC,Runge:19:Tool} is an IDE designed to promote the correct-by-construction approach.
+It comes with a hybrid graphical and textual interface.
+In its graphical interface, the user starts with a box labelled with pre/postconditions, representing a spec \ensuremath{[\mskip1.5mu \mathbin{!}\Conid{P},\Conid{Q}\mathbin{!}\mskip1.5mu]}.
+There is a menu from which the user may choose what the spec is to be refined to.
+To refine the spec to \ensuremath{[\mskip1.5mu \mathbin{!}\Conid{P},\Conid{R}\mathbin{!}\mskip1.5mu];[\mskip1.5mu \mathbin{!}\Conid{R},\Conid{Q}\mathbin{!}\mskip1.5mu]}, for example, the user choose "Composition Statement" from the menu, which generates a new node under the spec.
+The user is then required to provide \ensuremath{\Conid{R}} in the new node, \emph{before} two subtrees representing \ensuremath{[\mskip1.5mu \mathbin{!}\Conid{P},\Conid{R}\mathbin{!}\mskip1.5mu]} and \ensuremath{[\mskip1.5mu \mathbin{!}\Conid{R},\Conid{Q}\mathbin{!}\mskip1.5mu]} can be created and further refined.
+CorC also provides a textual interface, which works by the same principle:
+programs are created by refining specs,
+and to refine a spec, the user must provide pre/postconditions.
+While we felt that it was not the ideal style of interaction we would prefer,
+the experience with CorC motivated the creation of Guabao.
+
+Dafny \cite{Leino:14:Dafny} is a programming language and environment for program development and verification.
+As the user types in a program, Dafny verifies it by computing sufficient verification conditions and delegate them to an SMT solver, signals errors, and displays counter examples when a program does not meet the specification.
+The language provides a wide spectrum of features including
+inductive datatypes, classes and inheritance, recursive functions, mutable data structures.
+Verified program can be compiled to Java, C#, etc.
+Dafny is built around the model that the user programs and the system proves,
+while we wish the user to be more actively engaged in the proving aspect, and let proving guides programming.
+Still, in many aspects Dafny is a matured, ideal environment that meets our needs and offers much more --- we might not have developed Guabao had we known about Dafny earlier.
+We wish that Guabao will eventually grow into a system that is as complete as Dafny.
+
+CAPS (Calculational Assistant for Programming from Specifications) \cite{Chaudhari:14:Automated,Chaudhari:15:Building} is a system for derivation of imperative programs.
+Both CAPS and Guabao use a variation of Guarded Command Language and mathematical notations heavily influenced by Kaldewaij~\cite{Kaldewaij:90:Programming}.
+In contrast to the free-form text editing of Guabao, CAPS chose a tactic based approach.
+Programs cannot be edited directly and must be manipulated through tactics.
+For example, ``IfIntro'' introduces an \ensuremath{\mathbf{if}} statement,
+``WhileStrInv'' strengthens the invariant of a loop, etc.
+Tactics are also used to manipulate formulae, and these formulae can be fed back to tactics manipulating programs.
+Crucial proofs can be delegate to SMT solvers.
+Due to the tactic-based approach, programs in CAPS are represented by and displayed as graphs.
+One of the advantages is that CAPS maintains the full history of program development.
+The user may easily roll back to a previous stage and start a new experimental branch.
+
+\section{Conclusions}
+
 
 \subsubsection{Acknowledgements} Please place your acknowledgments at
 the end of the paper, preceded by an unnumbered run-in heading (i.e.
