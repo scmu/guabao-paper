@@ -98,7 +98,7 @@ The interface of Guabao should make such construction easy and natural.
 \item It allows {\bf free-form text editing}, as opposed to treating programs as diagrams as some program construction tools do, since we believe it what most programmers would prefer.
 \end{enumerate}
 In Section~\ref{sec:programming-example} we will see an example demonstrating all these features.
-It might also help to clarify what Guabao is not.
+It might also help to clarify what Guabao is not:
 \begin{enumerate}
 \item Gaubao is not an implementation of Guarded Command Language (GCL).
 Dijkstra~\cite{Dijkstra:98:Cruelty} wrote that he would
@@ -108,7 +108,7 @@ One cannot yet execute the program --- although it is not difficult to implement
 \item \todo{Guabao does not check your proof.}
 \end{enumerate}
 
-Currently, Guabao is implemented as an extension of the editor Visual Code Studio,
+Currently, Guabao is implemented as an extension of the editor Visual Studio Code,
 which can be installed by searching for the extension "Guabao" in the editor, or through its Extensions Marketplace~\footnote{\url{https://marketplace.visualstudio.com/items?itemName=scmlab.guabao}}.
 A simple one-click installation downloads the frontend and the pre-compiled backend.
 %The readers are welcomed to give it a try!
@@ -549,10 +549,8 @@ It is a function running in a writer monad with two methods:
 
 The case for |IF ... FI| is as explained before:
 we output a PO: |P ==> B0 |||| B1|, while recursively compute POs for the two branches with updated precondition |P && Bi|.
-In the case for |DO ... OD|,
-lines~\ref{code:struct:do:0} -- \ref{code:struct:do:3}
-respectively correspond to {\sf InvBase}, {\sf InvInd}, {\sf TermBase}, and {\sf TermInd} discussed in Section~\ref{sec:gcl}.
-More discussion about line \ref{code:struct:do:3} for {\sf TermInd} will be given later.
+The case for |DO ... OD| will be discussed later.
+%More discussion about line \ref{code:struct:do:3} for {\sf TermInd} will be given later.
 For other simple, non-sequence statements we fall back to |P ==> wp S Q| (line~\ref{code:struct:simp}).
 
 \begin{figure}[t]
@@ -566,8 +564,7 @@ struct (P,e) (DO B0 -> S0 | B1 -> S1 OD) Q =
   tellPO (P && not (B0 || B1) ==> Q)         {-"\label{code:struct:do:0}"-}
   struct (P && B0) S0 P; struct (P && B1) S1 P
   tellPO (P && (B0 || B1) ==> b >= 0)
-  termInd P e B0 S0; termInd P e B1 S1
-{-"\label{code:struct:do:3}"-}
+  termInd P e B0 S0; termInd P e B1 S1  {-"\label{code:struct:do:3}"-}
 
 struct P s Q = tellPO (P ==> wp s Q)  {-"\label{code:struct:simp}"-} -- other simple statements
 
@@ -580,7 +577,7 @@ struct P (ss eSpec Ss) Q  =  P' <- sp s P; Q' <- wp Ss Q;  {-"\label{code:struct
 
 termInd P e B S =  if containsSpec S then return ()
                         else  C <- newVar
-                              struct (P && B0 && e = C) (strip S) (e < C)
+                              struct (P && B && e = C) (strip S) (e < C)
 \end{spec}
 % struct P ({R} ss) Q     = tellPO (P => R); struct R ss Q
 % struct P ([!!] ss) Q    = tellSpec [!P, wp ss Q !]
@@ -639,13 +636,59 @@ sp (ss eSpec Ss)  P = tellSpec [!P,P!]; sp P Ss
 \label{fig:sp}
 \end{figure}
 
-There is one final issue. \todo{explain |termInd|.}
+Finally, let us talk about the case for |DO ... OD|.
+Lines~\ref{code:struct:do:0} -- \ref{code:struct:do:3} in Figure~\ref{fig:struct}
+respectively correspond to {\sf InvBase}, {\sf InvInd}, {\sf TermBase}, and {\sf TermInd} discussed in Section~\ref{sec:gcl}.
+The last case is the most tricky.
+Recall that, according to {\sf TermInd},
+for each |B_i -> S_i| the programmer shall prove that |htriple (P && B_i && e = C) S_i (e < C)|.
+One may want to naively make a call to |struct (P && B_i && e = C) S_i (e < C)|.
+However, notice that |C| is a fresh logical variable, and that |S_i| may contain assertions, which cannot mention |C|.
+As a result Guabao may end up generating unprovable POs, or produce impossible pre/postconditions for specs.
 
-\cite{Runge:19:Tool}
-\cite{Leino:14:Dafny}
-\cite{Chaudhari:15:Building}
+To get around the problem, the helper function |termInd| returns nothing if the loop body |S| contains specs --- we postpone generating all POs until the program is finished. If |S| contains no specs, we generate a fresh logical variable |C|, and applies |struct _ _ _| to |strip S| --- which denotes |S| with all assertions removed.
 
 \section{Related Works}
+
+Before and during development of Guabao, we surveyed a number of projects designed for similar goals.
+It is worth comparing their design choices and consequences.
+
+CorC \cite{Schaefer:18:CorC,Runge:19:Tool} is an IDE designed to promote the correct-by-construction approach.
+It comes with a hybrid graphical and textual interface.
+In its graphical interface, the user starts with a box labelled with pre/postconditions, representing a spec |[!P, Q!]|.
+There is a menu from which the user may choose what the spec is to be refined to.
+To refine the spec to |[!P, R!]; [!R, Q!]|, for example, the user choose "Composition Statement" from the menu, which generates a new node under the spec.
+The user is then required to provide |R| in the new node, \emph{before} two subtrees representing |[!P, R!]| and |[!R, Q!]| can be created and further refined.
+CorC also provides a textual interface, which works by the same principle:
+programs are created by refining specs,
+and to refine a spec, the user must provide pre/postconditions.
+While we felt that it was not the ideal style of interaction we would prefer,
+the experience with CorC motivated the creation of Guabao.
+
+Dafny \cite{Leino:14:Dafny} is a programming language and environment for program development and verification.
+As the user types in a program, Dafny verifies it by computing sufficient verification conditions and delegate them to an SMT solver, signals errors, and displays counter examples when a program does not meet the specification.
+The language provides a wide spectrum of features including
+inductive datatypes, classes and inheritance, recursive functions, mutable data structures.
+Verified program can be compiled to Java, C#, etc.
+Dafny is built around the model that the user programs and the system proves,
+while we wish the user to be more actively engaged in the proving aspect, and let proving guides programming.
+Still, in many aspects Dafny is a matured, ideal environment that meets our needs and offers much more --- we might not have developed Guabao had we known about Dafny earlier.
+We wish that Guabao will eventually grow into a system that is as complete as Dafny.
+
+CAPS (Calculational Assistant for Programming from Specifications) \cite{Chaudhari:14:Automated,Chaudhari:15:Building} is a system for derivation of imperative programs.
+Both CAPS and Guabao use a variation of Guarded Command Language and mathematical notations heavily influenced by Kaldewaij~\cite{Kaldewaij:90:Programming}.
+In contrast to the free-form text editing of Guabao, CAPS chose a tactic based approach.
+Programs cannot be edited directly and must be manipulated through tactics.
+For example, ``IfIntro'' introduces an |IF| statement,
+``WhileStrInv'' strengthens the invariant of a loop, etc.
+Tactics are also used to manipulate formulae, and these formulae can be fed back to tactics manipulating programs.
+Crucial proofs can be delegate to SMT solvers.
+Due to the tactic-based approach, programs in CAPS are represented by and displayed as graphs.
+One of the advantages is that CAPS maintains the full history of program development.
+The user may easily roll back to a previous stage and start a new experimental branch.
+
+\section{Conclusions}
+
 
 \subsubsection{Acknowledgements} Please place your acknowledgments at
 the end of the paper, preceded by an unnumbered run-in heading (i.e.
