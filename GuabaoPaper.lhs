@@ -490,7 +490,7 @@ PO generation is therefore an design issue:
 we want to generate POs that are useful for program construction, and moderate in size and number.
 
 On one thing, according to Figure~\ref{fig:wp}, a PO can be broken down along the structure of the program.
-On another, given a sequence of statements, how assertions are placed reflects the intention of the programmer. 
+On another, given a sequence of statements, how assertions are placed reflects the intention of the programmer.
 For example, given the program fragment below:
 \begin{spec}
 htriple2 P (S0; S1) R (S2; S3) Q  {-"~~,"-}
@@ -687,8 +687,27 @@ Due to the tactic-based approach, programs in CAPS are represented by and displa
 One of the advantages is that CAPS maintains the full history of program development.
 The user may easily roll back to a previous stage and start a new experimental branch.
 
-\section{Conclusions}
+\section{Conclusions and Future Work}
 
+We have presented a preliminary implementation of Guabao, an integrated environment for imperative program derivation.
+Its noticeable features, when compared with contemporary tools serving similar purposes, include: a free-form editing interface which encourages programs and proofs to be developed together; pre/postconditions of specs are inferred; assertions trigger generation of localised proof obligations.
+
+We have used Guabao in an undergraduate course on imperative programming.
+Most of the feedback from students were suggestions about elements of the interface.
+For example, previous versions of Guabao labelled code with POs using wavy underline, which felt like errors to some students.
+Some students find it cumbersome using the UTF-8 input method.
+These suggestions helped to improve Guabao.
+It is still too preliminary, however, to draw conclusion on how much Guabao helps students in learning program derivation.
+We hope to conduct a more through survey when Guabao grows into a more matured system.
+
+A lot remains to be done.
+To begin with, Guabao needs to be equipped with a sufficient library of standard functions and subroutines.
+We also plan to extend Guabao with a number of features including procedure calls and ability to manipulate data structures with pointers.
+To describe properties of such structure, the language in the assertions of Guabao needs to be extended to a more complete functional language.
+Finally, to verify the proofs written by users, we need a formal representation of equational proofs.
+For this purpose, the aforementioned functional language could be designed to be a language with dependent type, in which proofs can be represented by Curry-Howard correspondence.
+Or we can delegate the job to an existing theorem prover and use its language.
+It remains to see what is the most suitable.
 
 \subsubsection{Acknowledgements} Please place your acknowledgments at
 the end of the paper, preceded by an unnumbered run-in heading (i.e.
