@@ -483,20 +483,23 @@ wp (eSpec Ss)  Q =  Q' <- wp Ss Q               {-"\label{code:wp:seq:3}"-}
 \paragraph{Assertions and POs}
 The conventional definition of a Hoare triple is |htriple P S Q {-"\,"-}= {-"\,"-} (P ==> wp S Q)|.
 The main programs in Guabao also come in the form |htriple P S Q|.
-To establish the correctness of a completed program we could simply let the PO be the monolithic property |P ==> wp S Q|.
-This is not helpful for program construction, however.
-We wish to produce POs that give hints to to each program component that needs to be constructed.
+To establish the correctness of a completed program, we could simply let the PO be the monolithic property |P ==> wp S Q|.
+However, this is not helpful for program construction, because this would be the same as splitting program construction and proof of correctness.
+We wish to produce POs that give hints to each program component that needs to be constructed.
 PO generation is therefore an design issue:
 we want to generate POs that are useful for program construction, and moderate in size and number.
 
-Given a sequence of statements, how assertions are placed reflects the intention of the programmer. Therefore, in order to create "helpful" POs, we should take this into consideration. For example, given the program fragment below:
+On one thing, according to Figure~\ref{fig:wp}, a PO can be broken down along the structure of the program.
+On another, given a sequence of statements, how assertions are placed reflects the intention of the programmer. 
+For example, given the program fragment below:
 \begin{spec}
 htriple2 P (S0; S1) R (S2; S3) Q  {-"~~,"-}
 \end{spec}
-where |S0| -- |S3| are statements containing no assertions or specs,
-we emit two POs: |R ==> wp S2 (wp S3 Q)|, and
-|P ==> wp S0 (wp S1 R)|.
-That is, we assume that |R|, an assertion intentionally left there by the programmer, represents all what the programmer wishes to establish at this point and contains all the information about the current state needed to prove the program correct.
+%where |S0| -- |S3| are statements containing no assertions or specs.
+This could be reflecting the intention that, at the point between |S1| and |S2|,
+the programmer wishes to conclude all the information about the current state, which can be used to prove the correctness of the former and the latter part of the program separately.
+Therefore, Guabao should emit two POs: |R ==> wp S2 (wp S3 Q)|, and |P ==> wp S0 (wp S1 R)|.
+
 Note that this is stronger than the traditional definition:
 |wp (assert R) Q = R && Q|.
 Consider the following programs (assuming |x, z : Int|):
