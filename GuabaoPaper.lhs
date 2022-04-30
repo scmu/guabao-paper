@@ -225,14 +225,15 @@ compute |A * B| using only addition, subtraction, predicates |even| and |odd|, a
 % This is a classical exercise, and was once a useful one for early microcomputers, which did not have an atomic instruction for general multiplication (multiplication by |2| involves only bit-shifting and is much cheaper).
 
 Specification of the problem is shown below.
-We declare two constants |A| and |B|, about them all we know is that they are both non-negative (as asserted in |assert (A >= 0 && B >= 0)|).
+We declare two constants |A| and |B|, about them all we know is that |B| is non-negative.
+%(as asserted in |assert (A >= 0 && B >= 0)|).
 Functions |even| and |odd|, which we will use later,
 are declared as constants.
 Also declared is a variables |r| having type |Int|.
-The goal of the program is to store the value of |A * B| in variable |r|, as stated in the postcondition |assert (r = A * B)|.
+The goal of the program is to store the value of |A * B| in variable |r|, as stated in |assert (r = A * B)| --- a valid Guabao program must end with an assertion stating its postcondition.
 The question mark indicates code yet to be written.
 \begin{spec}
-CON A, B : Int (assert (A >= 0 && B >= 0))
+CON A, B : Int (assert (B >= 0))
 CON even, odd : Int -> Bool
 VAR r : Int
 
@@ -248,16 +249,16 @@ VAR r : Int
 
 Guabao parses and analyses the code as it is typed into the editor.
 Once the code is pasted into Guabao, we will see:\\
-\sshotimg{sshot00}
+\sshotimg{sshot00}\\
 Guabao automatically expands the question mark |?| to a \emph{spec} — a hole in the program to be filled in, denoted by |[! ... !]|.
 The idea of a spec is inspired by Morgan~\cite{Morgan:90:Programming}, with a slight difference: in Morgan~\cite{Morgan:90:Programming} one starts program construction from a spec with given pre/postconditions, while in Guabao the pre/postconditions are inferred.
-The interface shows, on line 5 and 7, that code to be filled in shall bring the state of the system from precondition |True| to postcondition |r = A * B|. Properties of global constants (namely |A >= 0 && B >= 0|) are universally true and implicitly conjuncted with all assertions. They are displayed separately in a ``Property'' section in the right pane.
+The interface shows, on line 5 and 7, that code to be filled in shall bring the state of the system from precondition |True| to postcondition |r = A * B|. Properties of global constants (namely |B >= 0|) are universally true and implicitly conjuncted with all assertions. They are displayed separately in a ``Property'' section in the right pane.
 
 \paragraph{Introducing a Loop}
 For such a non-trival task we expects that a loop is needed,
 so we try to fill in the spec:
 \\\sshotimg{sshot01}\\
-To construct a loop we must think about its invariant and bound.
+Guabao syntactically enforces that each loop comes with a loop invariant and a bound.
 Various techniques were developed to construct candidates of loop invariants from the postcondition.
 We cannot properly cover the techniques in this paper but, for interested readers, we recommend Kaldewaij~\cite{Kaldewaij:90:Programming}.
 For this problem, we use one of the standard tricks:
@@ -268,17 +269,17 @@ therefore we let |b| be the bound (line 7).
 The loop body is left as a question mark.
 
 When the cursor is in the spec, press {\tt ctrl-c-r} to fill in the spec.
-In the screenshot in the top of Figure~\ref{fig:sshot23}, the code typed into the hole becomes part of the program,
+In the screenshot in Figure~\ref{fig:sshot2}, the code typed into the hole becomes part of the program,
 while the question mark becomes a new hole.
 \footnote{This style of interaction (including the hot-key combination) is inspired by Agda.}
-The pre/postconditions are calculated from {\sf InvInd}.
+The two POs shown on the right pane are respectively calculated {\sf InvBase} and {\sf TermBase}, while the pre/postconditions of the spec are calculated from {\sf InvInd}.
 %\\\sshotimg{sshot02}\\
 
-\begin{figure}
+\begin{figure}[t]
 \sshotimg{sshot02}\\
-\sshotimg{sshot03}
-\caption{Top: after introducing a loop. The POs come respectively from {\sf InvBase} and {\sf TermBase}. Pre/postconditions of the spec are from {\sf InvInd}. Bottom: clicking on the hash introduces a proof block.}
-\label{fig:sshot23}
+%\sshotimg{sshot03}
+\caption{After introducing a loop.}
+\label{fig:sshot2}
 \end{figure}
 
 \paragraph{The Interface}
@@ -294,7 +295,7 @@ The right pane contains information including
 \item global properties, etc.
 \end{itemize}
 Since the number of POs can be large, in the right pane we display those on the path of the current location of the cursor.
-In Figure~\ref{fig:sshot23}, the cursor is at line 7, beginning of the loop.
+In Figure~\ref{fig:sshot2}, the cursor is at line 7, beginning of the loop.
 POs in the right pane include:
 \begin{spec}
 a * b + r = A * B  && not  (b /= 0)   ==>  r = A * B  {-"~~, \mbox{which is {\sf InvBase}, and}"-}
@@ -302,19 +303,23 @@ a * b + r = A * B  &&      b /= 0     ==>  b >= 0     {-"~~, \mbox{which is {\sf
 \end{spec}
 %The first one is aforementioned {\sf InvBase}, while the second is {\sf TermBase}.
 
-Each PO comes with a hash key. Clicking on the hash key for the first PO, for example, results in the screenshot in the bottom of Figure~\ref{fig:sshot23}.
-%\\\sshotimg{sshot03}\\
-A new comment block having the hash key is added to the bottom of the code, in which the programmer can write up a proof of the corresponding property.
-A program is proven correct if all POs are proved.
-Hash key of a PO with a proof block is displayed in blue (see the top-right corner).
-Currently the system makes no attempt to check these proofs, however.
-They are just comments for the user.
-
-Once we start doing the proofs, it immediately turns out that we cannot prove {\sf TermBase} --- the premise does not guarantee |b >= 0|! We thus realise that we need a stronger invariant. The new invariant would be
+The {\sf InvBase} PO is trivial to prove --- the invariant and the bound were designed to make it trivial.
+At the top of the box displaying this PO there is a icons of a magic wand.
+Clicking on it invokes the SMT solver Z3, which generates the output "Q.E.D", indicated that it is proved.
+The PO {\sf TermBase}, however, turns out to be falsifiable. Indeed, the premise does not guarantee |b >= 0|! We thus realise that we need a stronger invariant. The new invariant would be:
 \begin{spec}
  a * b + r = A * B  &&  b >= 0 {-"~~."-}
 \end{spec}
 After the user updates the invariant, the POs and the specs are updated accordingly.
+
+% Each PO comes with a hash key. Clicking on the hash key for the first PO, for example, results in the screenshot in the bottom of Figure~\ref{fig:sshot23}.
+% %\\\sshotimg{sshot03}\\
+% A new comment block having the hash key is added to the bottom of the code, in which the programmer can write up a proof of the corresponding property.
+% A program is proven correct if all POs are proved.
+% Hash key of a PO with a proof block is displayed in blue (see the top-right corner).
+% Currently the system makes no attempt to check these proofs, however.
+% They are just comments for the user.
+
 
 \paragraph{Constructing the Loop Body}
 Now we attempt to construct the loop body.
@@ -340,17 +345,16 @@ a * (b / 2) + r = A * B && b / 2 >= 0 {-"~~."-}
 \end{spec}
 What can we do?
 
-\begin{figure}[h]
+\begin{figure}[th]
 \sshotimg{sshot04}\\
 \sshotimg{sshot05}
 \caption{Top: guessing that the last statement could be |b := b / 2|.
-Bottom: trying to fill in |b := b * 2| in the loop body. It will turn out that we cannot prove {\sf TermInd}.}
+Bottom: trying to fill in |b := b * 2| in the loop body --- we cannot prove the PO.}
 \label{fig:sshot45}
 \end{figure}
 
 One possibility is filling in |b := b * 2|.
-That, however, results in the bottom of Figure~\ref{fig:sshot45}, where
-Proof obligation {\sf TermInd}, shown in the right pane, demands us to prove that
+That, however, results in the bottom of Figure~\ref{fig:sshot45}, where the PO shown in the right pane, which is a consequence of {\sf TermInd} demands us to prove that
 %format bnd_0 = "{?bnd_{51}}"
 \begin{spec}
 .... b = bnd_0 ... ==> (b * 2) / 2 < bnd_0 {-"~~,"-}
@@ -359,12 +363,29 @@ where |bnd_0| is a system-generated logical variable.
 This property cannot be proved, and
 we learn that |b := b * 2; b := b / 2| is a bad idea as the loop body --- the bound |b| does not decrease.
 
-Another possible choice is |a := a * 2|.
-For that we have to prove an proof obligation induced from {\sf InvInd}, which simplifies to
+Another possible choice is |a := a * 2|. If we try this option:\\
+\sshotimg{sshot06}\\
+It turns out that we have to prove a PO that simplifies to
 \begin{spec}
 (a * b) + r = A * B .... {-"~~"-}  ==> {-"~~"-} ((a * 2) * (b / 2)) + r = A * B ....
 \end{spec}
-which, under integral division, can be true \emph{provided that |b| is an even number}.
+This time we demonstrate a manual proof.
+Each PO comes with a hash key.
+Clicking on the hash key ({\sf \#5F2E722} in the screenshot above) for the PO creates
+a new comment block labelled by the hash key, in which the programmer can write
+up a proof of the corresponding property.
+Hash key of a PO with a proof block is displayed in blue.
+A program is proven correct if all POs are either proved by Z3 or by the programmer.
+
+Currently the system makes no attempt to check the proofs written by the user ---
+in a lecture the proofs would be checked by a teacher.
+It is our future work to develop a language that is suitable for manual calculational proofs and yet machine-verifiable.
+
+% They are just comments for the user.
+% Hash key of a PO with a proof block is displayed in blue (see the top-right corner).
+%
+
+It turns out that, to prove the PO, we will need |b| to be a even number (line 17 in the screenshot), assuming integral division.
 This is a hint that we shall wrap |a := a * 2; b := b / 2| in a guard |even b|, to ensure that |b| is even, and put it in an |IF| construct.
 The current code is:
 \begin{spec}
@@ -372,10 +393,10 @@ DO b /= 0 ->
   IF even b ->  a := a * 2
                 b := b / 2
   FI
-OD
+OD {-"~~."-}
 \end{spec}
 
-\paragraph{Totalising |IF|}
+\paragraph{Totalisation}
 We are not done yet. Among all the POs we will be asked to prove that |IF| is total --- every possible case is covered.
 Therefore we need to think about what to do in the |odd b| case. For this case we might decrease |b| by |b := b - 1|. By a similar process we can construct what to do with |a| and |r| in this case to maintain the invariant. A possible final program would be (omitting the declarations):
 \begin{spec}
@@ -387,7 +408,7 @@ DO b /= 0 ->  IF  even b  ->  a := a * 2
                               b := b - 1
               FI
 OD
-(assert (r = A * B))
+(assert (r = A * B)) {-"~~,"-}
 \end{spec}
 which computes |A * B| using $O(\log B)$ atomic arithmetic operations.
 
@@ -428,6 +449,25 @@ The interface of Guabao aims to encourage such interaction.
 %      \end{subfigure}
 % \end{figure}
 
+
+\begin{figure}[th]
+\sshotimg{mss}
+\caption{The \emph{maximum segment sum} problem.}
+\label{fig:mss}
+\end{figure}
+
+\paragraph{Other Features}
+Figure~\ref{fig:mss} presents the classical \emph{maximum segment sum} problem, which demonstrates some features we have not mentioned in the previous example.
+Given an array of |N| integers (line 2), the goal is to find the maximum possible some of a consecutive segment.
+The postcondition on line 17 formally describes the goal --- see the use of Eindhoven notation for quantifiers, which denotes ``for |0 <= i <= j <= N|, collect |sum i j| and find the largest |(`max`)|,  where |i| and |j| are bound variables.''
+Guabao supports arrays that can be nested and mutable (if declared in |VAR|).
+Pure functions to be used in assertions can be defined in declaration blocks |{: ... :}|.
+Shown in the right pane a PO induced from {\sf InvInd} --- that the invariant holds after one more iteration of the loop.
+The notation |P (subst s (s `max`r))| denotes substituting |s `max`r| for all free occurrences of |s| in |P|, which appears in the PO as a consequences of |s := s `max` r| in the code. Clicking on |P| expands its definition and performs the substitution.
+
+Like the previous example, development of this program was not done in one step.
+The usual story goes like: we started with a spec without |r|, using |P && 0 <= n <= N| as the loop invariant, and the first attempt was to construct the main loop with |n := n + 1| as its \emph{last} step. While trying to satisfy the spec and prove {\sf InvInd}, we would discover that, to update |s| quickly, we may strengthen the invariant with a variable |r|, storing the maximum \emph{suffix} sum, as stated by |Q n|, which was also discovered during the proof. The interface of Guabao wishes to make this process natural and smooth.
+
 \section{Behind the Scenes}
 \label{sec:po-generation}
 
@@ -436,7 +476,7 @@ In this section we examine the design of this engine.
 
 When seeing a Hoare triple |htriple P S Q|, Guabao invokes the ternary function |struct _ _ _|, summarised in Figure~\ref{fig:struct}, to generate POs.
 To understand it, however, we shall start with some discussion on the interplay between assertions and POs.
-\todo{Briefly describe the relation of wp, assertions and PO}
+%\todo{Briefly describe the relation of wp, assertions and PO}
 %something like: "The algorithm generating POs is described below: it involves the concept of weakest precondition and how the programmer places the assertions among the program"
 
 \paragraph{Weakest preconditions}
@@ -453,7 +493,7 @@ In the patterns between line \ref{code:wp:seq:0} -- \ref{code:wp:seq:3} in Figur
 and |(s; ss)| a sequence starting with a non-sequent statement followed by sequence |ss|.
 An empty sequence is denoted by |eps|, and |wp eps| is the identity function.
 For the |(s;ss)| case, we have the standard definition |wp (s; ss) Q = wp s (wp ss Q)|.
-\todo{Reorganize the paragraph}
+%\todo{Reorganize the paragraph}
 %something like: “The cases above are rules upon a single statement; since a program is usually constituted with a sequence of statements, we use the rules 7-10, to denote assertions and specs regarding a statement sequence. |({P} Ss)| denotes...”
 
 The last two cases on line \ref{code:wp:seq:2} -- \ref{code:wp:seq:3} reveal that |wp| actually returns a monadic value.
@@ -461,11 +501,12 @@ For brevity we have pretended that |wp| returns a pure value in simpler cases,
 omitted the Haskell-ish |do| keyword,
 and spelled out the keyword |return| only when it follows an effectful operation.
 More about these two cases will be discussed later.
-\todo{Reorganize the paragraph}
+%\todo{Reorganize the paragraph}
 %something like: “|wp| is actually returning a monadic value. For brevity, we have pretended that |wp| returns a pure value in simpler cases(line1-8); when it involves effectful operations -- tellPO and tellSpec, which can be seen in the last two rules --, we explicitly spell out the keyword |return|, omitting the Haskell-ish |do| keyword.”
 
 % this is how I see the logical flow of these 3 paragraphs: from dealing with simple cases to its true, monadic nature.
 
+%format mu = "\mu"
 \begin{figure}[t]
 \numberson
 \begin{spec}
@@ -474,7 +515,8 @@ wp skip      Q = skip
 wp (x := e)  Q = Q (subst x e)
 wp (IF B0 -> S0  | B1 -> S1 FI) Q  =
   (B0 || B1) && (B0 => wp S0 Q) && (B1 => wp S1 Q)
-wp (DO B_i -> S_i OD)  Q = ??
+wp (DO B0 -> S0  | B1 -> S1 OD)  Q =
+  mu (X -> ((B0 && B1) || Q) && (B0 => wp S0 X) && (B1 => wp S1 X))
 
 wp eps      Q = Q                            {-"\label{code:wp:seq:0}"-}
 wp (s; ss)  Q = wp s (wp ss Q)
@@ -525,9 +567,9 @@ All of them can easily be discharged.
 In contrast, while ${\sf P}_2$ is a valid program in the traditional setting, Guabao would generate an unprovable PO: |True ==> x/2 >= 0| (and a trivial PO: |z > x ==> True|).
 We believe that this is suitable for Guabao, which is not designed to prove programs in general, but to construct programs with an intention in mind.
 
-It is also worth noting that, while some tools for program construction demand programmers to specify intermediate conditions between every sequenced statements (that is, to construct |htriple P (S0; S1) Q| the user has to provide |R| such that |htriple2 P S0 R S1 Q| holds),
+It is also worth noting that, while some tools for program construction demand programmers to specify intermediate conditions between every sequenced statements (that is, to construct |htriple P (S0; S1) Q| the user has to provide |R| such that |htriple2 P S0 R S1 Q| holds, see Section~\ref{sec:related-works}),
 this is not so in Guabao. Instead, weakest preconditions are accumulated until we meet a programmer-inserted assertion, where we emit a PO.
-\todo{citation needed?}
+
 % It feels like usually, "while some tools for program construction demand..." needs a citation, I'm not sure if it's needed here.
 
 Having assertions helps to generate more specific POs.
@@ -605,12 +647,13 @@ As discussed before, assertions are treated differently.
 Furthermore, we need to infer pre/postconditions for specs.
 Therefore we partition a sequence of statements into segments separated by assertions or specs, and process them segment-by-segment.
 We call a sequence \emph{simple} if it contains no assertions or specs.
-In the patterns between line~\ref{code:struct:seq:0} and \ref{code:struct:seq:3}, |ss| denotes a (possibly empty) simple sequence of statements, while |Ss| denotes a general sequence.
+In the patterns between line~\ref{code:struct:seq:0} and \ref{code:struct:seq:3}, |ss| denotes a (possibly empty) simple sequence of statements, while |Ss| denotes any sequence.
 Lines \ref{code:struct:seq:0} -- \ref{code:struct:seq:1} deal with simple sequences.
 For an empty sequence we simply emit |P ==> Q|.
 For |(s;ss)|, we compute |wp ss Q|, and let it be the postcondition for |s|.
-\todo{a question}
+%\todo{a question}
 % I'm not sure if the concept of general sequence is a commonsense in this community... what does it precisely mean here? From what I can see, It looks just like ss...
+% SCM: I've changed it to "any sequence".
 
 When the first simple segment |ss| is separated from the rest |Ss| by an assertion |{R}| (line \ref{code:struct:seq:2}), we recursively compute |struct P ss R| and |struct R Ss Q|.
 
