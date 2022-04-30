@@ -106,7 +106,7 @@ Gaubao is not an implementation of GCL in which one can write a program and test
 \item Guabao does not intend to prove \emph{everything} regard the correctness of the program for the user.
 Instead, it computes the proof obligations needed to guarantee correctness, and let them guide the development of the said program.
 Guabao does employ an SMT solver (currently Z3~\cite{MS:12:Z3}) to discharge simple proof obligations.
-However, we believe that proving properties that are related to the algorithmic aspect of a program and, in case of failure, learn from the proof how the program should evolve to allow the proof to go through, is a part of the program development process, which should be carried out by the user.
+However, we believe that proving properties that are related to the algorithmic aspect of a program and, in case of failure, learning from the proof how the program should evolve to allow the proof to go through, is a part of the program development process, which should be carried out by the user.
 It is especially so in a course teaching program derivation.
 Currently Guabao does not check user-written proofs.
 To do so we shall develop a representation of equational proofs, which is one of our future works.
