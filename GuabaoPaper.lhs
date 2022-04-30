@@ -475,9 +475,12 @@ A central part of the backend of Guabao is an engine that scans through the code
 In this section we examine the design of this engine.
 
 When seeing a Hoare triple |htriple P S Q|, Guabao invokes the ternary function |struct _ _ _|, summarised in Figure~\ref{fig:struct}, to generate POs.
+The function |struct _ _ _| will be discussed in more details later.
 To understand it, however, we shall start with some discussion on the interplay between assertions and POs.
 %\todo{Briefly describe the relation of wp, assertions and PO}
 %something like: "The algorithm generating POs is described below: it involves the concept of weakest precondition and how the programmer places the assertions among the program"
+%SCM: but that's what I am going to discuss. I added a sentence: The function |struct _ _ _| will be discussed in more details later.
+
 
 \paragraph{Weakest preconditions}
 It is known that for every statement |S|, one can compute |wp S Q|, its weakest precondition with respect to postcondition |Q|.
@@ -495,14 +498,16 @@ An empty sequence is denoted by |eps|, and |wp eps| is the identity function.
 For the |(s;ss)| case, we have the standard definition |wp (s; ss) Q = wp s (wp ss Q)|.
 %\todo{Reorganize the paragraph}
 %something like: “The cases above are rules upon a single statement; since a program is usually constituted with a sequence of statements, we use the rules 7-10, to denote assertions and specs regarding a statement sequence. |({P} Ss)| denotes...”
+%SCM: I tried to refrain from categorising the previous cases as "single statements" since IF and DO are both compound statements.
 
 The last two cases on line \ref{code:wp:seq:2} -- \ref{code:wp:seq:3} reveal that |wp| actually returns a monadic value.
-For brevity we have pretended that |wp| returns a pure value in simpler cases,
+For brevity we have pretended that |wp| returns a pure value in previous cases,
 omitted the Haskell-ish |do| keyword,
 and spelled out the keyword |return| only when it follows an effectful operation.
 More about these two cases will be discussed later.
 %\todo{Reorganize the paragraph}
 %something like: “|wp| is actually returning a monadic value. For brevity, we have pretended that |wp| returns a pure value in simpler cases(line1-8); when it involves effectful operations -- tellPO and tellSpec, which can be seen in the last two rules --, we explicitly spell out the keyword |return|, omitting the Haskell-ish |do| keyword.”
+%SCM: We used return in line 10 too, which does not contain tellPO and tellSpec.
 
 % this is how I see the logical flow of these 3 paragraphs: from dealing with simple cases to its true, monadic nature.
 
@@ -518,7 +523,7 @@ wp (IF B0 -> S0  | B1 -> S1 FI) Q  =
 wp (DO B0 -> S0  | B1 -> S1 OD)  Q =
   mu (X -> ((B0 && B1) || Q) && (B0 => wp S0 X) && (B1 => wp S1 X))
 
-wp eps      Q = Q                            {-"\label{code:wp:seq:0}"-}
+wp eps      Q = Q                               {-"\label{code:wp:seq:0}"-}
 wp (s; ss)  Q = wp s (wp ss Q)
 
 wp ({P} Ss)    Q = struct P Ss Q; return P      {-"\label{code:wp:seq:2}"-}
@@ -527,7 +532,6 @@ wp (eSpec Ss)  Q =  Q' <- wp Ss Q               {-"\label{code:wp:seq:3}"-}
                     return Q'
 \end{spec}
 %wp (IF B0 -> S0  | B1 -> S1 FI) Q  = (B0 || B1) && (Bi => wp Si Q)
-
 \numbersoff
 \numbersreset
 \caption{The weakest precondition predicate transformer.}
@@ -538,7 +542,9 @@ wp (eSpec Ss)  Q =  Q' <- wp Ss Q               {-"\label{code:wp:seq:3}"-}
 The conventional definition of a Hoare triple is |htriple P S Q {-"\,"-}= {-"\,"-} (P ==> wp S Q)|.
 The main programs in Guabao also come in the form |htriple P S Q|.
 To establish the correctness of a completed program, we could simply let the PO be the monolithic property |P ==> wp S Q|.
-However, this is not helpful for program construction, because this would be the same as splitting program construction and proof of correctness.
+However, this is not helpful for program construction.
+%because this would be the same as splitting program construction and proof of correctness.
+%SCM: hmm.. the reason is more subtle.
 We wish to produce POs that give hints to each program component that needs to be constructed.
 PO generation is therefore an design issue:
 we want to generate POs that are useful for program construction, and moderate in size and number.
@@ -549,7 +555,8 @@ For example, given the program fragment below:
 \begin{spec}
 htriple2 P (S0; S1) R (S2; S3) Q  {-"~~,"-}
 \end{spec}
-%where |S0| -- |S3| are statements containing no assertions or specs.
+where |S0| -- |S3| are statements containing no assertions or specs.
+%SCM: The previous line cannot be omitted. Otherwise Guabao would not generate the PO below as claimed.
 This could be reflecting the intention that, at the point between |S1| and |S2|,
 the programmer wishes to conclude all the information about the current state, which can be used to prove the correctness of the former and the latter part of the program separately.
 Therefore, Guabao should emit two POs: |R ==> wp S2 (wp S3 Q)|, and |P ==> wp S0 (wp S1 R)|.
@@ -670,7 +677,7 @@ It is valid if we generate |ss [!Q', Q'!] Ss|, that is, Guabao could instruct th
 This is usually not very helpful, however.
 Instead, we compute the \emph{strongest postcondition} of |s| with respect to |P|, and use that as the precondition of the spec.
 The function |sp| that computes the strongest postcondition is defined in Figure~\ref{fig:sp}.
-When specs appears consecutively (e.g. |ss0 eSpec ss1 eSpec ss2|), we will run into the last case of |wp| (line \ref{code:wp:seq:3} of Figure~\ref{fig:wp}), where we have no choice but create |[!Q,Q!]|.
+When specs appears consecutively (e.g. |ss0 eSpec ss1 eSpec ss2|), we will run into the last case of |wp| (line \ref{code:wp:seq:3} of Figure~\ref{fig:wp}), where we simply create |[!Q,Q!]|.~\footnote{Another choice is to create a new logical variable |V| and let the spec be |[!V,Q!]|, but since the user cannot directly edit |V|, this is not more helpful. The user may always specify the precondition of the spec by adding an assertion.}
 
 \begin{figure}[t]
 \begin{spec}
@@ -766,10 +773,11 @@ For this purpose, the aforementioned functional language could be designed to be
 Or we can delegate the job to an existing theorem prover and use its language.
 It remains to see what is the most suitable.
 
-\subsubsection{Acknowledgements} Please place your acknowledgments at
-the end of the paper, preceded by an unnumbered run-in heading (i.e.
-3rd-level heading).
-
+\subsubsection{Acknowledgements}
+We would like to thank the members of PLFM group in IIS, Academia Sinica,
+in particular Bow-Yaw Wang, for his support of this project,
+and to members of IFIP Working Group 2.1, in particular Carroll Morgan,
+for his insightful opinions and valuable discussions.
 
 %% Bibliography
 \bibliographystyle{splncs04}

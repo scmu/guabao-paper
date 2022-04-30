@@ -447,7 +447,7 @@ Hsien-En Tzeng\inst{2}%
 \authorrunning{S-C. Mu  et al.}
 
 \institute{
-Institute of Information Science, %\\
+%Institute of Information Science, %\\
 Academia Sinica, Taiwan \and
 National Taiwan University, Taiwan
 }
@@ -456,12 +456,10 @@ National Taiwan University, Taiwan
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-
 Guabao is an integrated environment for imperative program derivation --- the process of formally and step-wise constructing a program from its specification.
 As the programmer types in the code, in a variation of Guarded Command Language,
 Guabao computes its proof obligations in an interface that encourages the program and its correctness proof to be developed hand in hand.
-We present the user experience of Guabao, the algorithm it uses to compute proof obligations and infer pre/postconditions, and talk about our preliminary experience using it in an undergraduate course.
-
+We present the user experience of Guabao, the algorithm it uses to compute proof obligations and infer pre/postconditions, and compare it with contemporary tools serving similar purposes.
 \keywords{program derivation \and integrated developing environment \and proofs}
 \end{abstract}
 
@@ -500,7 +498,7 @@ The aim is to develop a programming environment having the following features:
 \item It encourages {\bf developing proofs and programs together}.
 While the user may certainly write up all the code in Guabao and verify it afterwards, the interface shall allow the user to interleave proving and coding, and let the two modes aid each other.
 \item It encourages {\bf backward-reasoning}.
-Since it is easier to construct the weakest precondition of an assignment from its postcondition than the other way round,
+Since it is easier to construct the weakest precondition of an assignment (\ensuremath{\Varid{x}\mathbin{:=}\Varid{e}}) from its postcondition than the other way round,
 to construct a block of statements, many derivation techniques start with thinking about what the \emph{last assignment} could be.
 The interface of Guabao should make such construction easy and natural.
 \item It allows {\bf free-form text editing}, as opposed to treating programs as diagrams as some program construction tools do, since we believe it what most programmers would prefer.
@@ -512,18 +510,30 @@ It might also help to clarify what Guabao is not:
 Dijkstra~\cite{Dijkstra:98:Cruelty} wrote that he would
 design a programming language for teaching (which we believe would be GCL) and ``see to it that [it] has not been implemented on campus so that students are protected from the temptation to test their programs.''
 Gaubao is not an implementation of GCL in which one can write a program and test it, but an environment where a program and its proof can be designed together.
-One cannot yet execute the program --- although it is not difficult to implement an interepreter and allow a program to run once all proofs are done.
-\item \todo{Guabao does not check your proof.}
+% One cannot yet execute the program --- although it is not difficult to implement an interpreter and allow a program to run once all proofs are done.
+\item Guabao does not intend to prove \emph{everything} regard the correctness of the program for the user.
+Instead, it computes the proof obligations needed to guarantee correctness, and let them guide the development of the said program.
+Guabao does employ an SMT solver (currently Z3~\cite{MS:12:Z3}) to discharge simple proof obligations.
+However, we believe that proving properties that are related to the algorithmic aspect of a program and, in case of failure, learn from the proof how the program should evolve to allow the proof to go through, is a part of the program development process, which should be carried out by the user.
+It is especially so in a course teaching program derivation.
+Currently Guabao does not check user-written proofs.
+To do so we shall develop a representation of equational proofs, which is one of our future works.
 \end{enumerate}
 
-Currently, Guabao is implemented as an extension of the editor Visual Studio Code,
+Guabao is implemented as an extension of the editor Visual Studio Code,
 which can be installed by searching for the extension "Guabao" in the editor, or through its Extensions Marketplace~\footnote{\url{https://marketplace.visualstudio.com/items?itemName=scmlab.guabao}}.
-A simple one-click installation downloads the frontend and the pre-compiled backend.
+A simple one-click installation downloads the frontend and the pre-compiled backend.%
+~\footnote{Z3 has to be installed separately, however.}
 %The readers are welcomed to give it a try!
-The backend of Guabao is implemented using Haskell~\cite{PeytonJones:03:Haskell}, while the frontend is implemented using Reason~\cite{Walke:16:Reason} and compiled to Javascript to run as a VS Code extension.
+The backend of Guabao is implemented using Haskell~\cite{PeytonJones:03:Haskell}, while the frontend is implemented using Reason~\cite{Walke:16:Reason} and compiled to Javascript to run in VS Code.
 Regarding its name,
 GUA in Guabao comes from GUArded command language.
 Guabao (\cjk{刈包}) is a street food popular in places including Taiwan, where Guabao the software was designed.
+
+After giving a brief review of the Guarded Command Language in Section~\ref{sec:gcl}, we demonstrate how it is like using Guabao by a simple example in Section~\ref{sec:programming-example}.
+Section~\ref{sec:po-generation} presents the algorithm we use to generate proof obligations and infer pre/postconditions of specs.
+We compare Guabao with some other tools in Section~\ref{sec:related-works}
+before we conclude in Section~\ref{sec:conclude}.
 
 \section{The Guarded Command Language}
 \label{sec:gcl}
@@ -562,7 +572,8 @@ Definitions of \ensuremath{\Conid{Expr}} and \ensuremath{\Conid{Type}} are omitt
 \end{figure}
 
 Guabao uses a variation of the Guarded Command Language (GCL)~\cite{Dijkstra:75:Guarded},
-which we will briefly review in this section for completeness.
+which we will briefly review in this section,
+emphasising on what needs to be proved about a given statement.
 A condensed presentation of its abstract syntax is given in Figure~\ref{fig:gcl-syntax}.
 A program consists of a section of declarations followed by a section of statements.
 Constant and variable declarations respectively start with keywords \ensuremath{\mathbf{var}} and \ensuremath{\mathbf{con}}.
@@ -586,8 +597,8 @@ The operator \ensuremath{\mathbin{:=}} denotes assignment; parallel assignment o
 A \emph{guarded command} \ensuremath{\Conid{B}\to \Conid{S}}, where \ensuremath{\Conid{B}} is a Boolean-valued expression, denotes a command where \ensuremath{\Conid{S}} is executed only if the \emph{guard} \ensuremath{\Conid{B}} evaluates to \ensuremath{\Conid{True}}.
 
 Guarded commands alone do not form a complete statement.
-A group of guarded commands surrounded by \ensuremath{\mathbf{if}\mathbin{...}\mathbf{fi}} denotes conditional branches.
-For example, \ensuremath{\mathbf{if}\;\Conid{B}_{0}\to \Conid{S}_{0}\mid \Conid{B}_{1}\to \Conid{S}_{1}\;\mathbf{fi}} has two branches, where \ensuremath{\Conid{Si}} is executed if \ensuremath{\Conid{Bi}} holds (\ensuremath{\Varid{i}\in \{\mskip1.5mu \mathrm{0},\mathrm{1}\mskip1.5mu\}}).
+The statement \ensuremath{\mathbf{if}\mathbin{...}\mathbf{fi}}, enclosing a group of guarded commands, denotes conditional branches.
+For example, \ensuremath{\mathbf{if}\;\Conid{B}_{0}\to \Conid{S}_{0}\mid \Conid{B}_{1}\to \Conid{S}_{1}\;\mathbf{fi}} has two branches, where \ensuremath{\Conid{S}_{i}} is executed if \ensuremath{\Conid{B}_{i}} holds (\ensuremath{\Varid{i}\in \{\mskip1.5mu \mathrm{0},\mathrm{1}\mskip1.5mu\}}).
 If both \ensuremath{\Conid{B}_{0}} and \ensuremath{\Conid{B}_{1}} holds, \emph{one} of the branches is nondeterministically executed.
 If neither holds, the program aborts.
 To prove that
@@ -656,16 +667,17 @@ compute \ensuremath{\Conid{A}\times\Conid{B}} using only addition, subtraction, 
 % This is a classical exercise, and was once a useful one for early microcomputers, which did not have an atomic instruction for general multiplication (multiplication by |2| involves only bit-shifting and is much cheaper).
 
 Specification of the problem is shown below.
-We declare two constants \ensuremath{\Conid{A}} and \ensuremath{\Conid{B}}, about them all we know is that they are both non-negative (as asserted in \ensuremath{\assert{\Conid{A}\geq \mathrm{0}\mathrel{\wedge}\Conid{B}\geq \mathrm{0}}}).
+We declare two constants \ensuremath{\Conid{A}} and \ensuremath{\Conid{B}}, about them all we know is that \ensuremath{\Conid{B}} is non-negative.
+%(as asserted in |assert (A >= 0 && B >= 0)|).
 Functions \ensuremath{\Varid{even}} and \ensuremath{\Varid{odd}}, which we will use later,
 are declared as constants.
 Also declared is a variables \ensuremath{\Varid{r}} having type \ensuremath{\Conid{Int}}.
-The goal of the program is to store the value of \ensuremath{\Conid{A}\times\Conid{B}} in variable \ensuremath{\Varid{r}}, as stated in the postcondition \ensuremath{\assert{\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}}}.
+The goal of the program is to store the value of \ensuremath{\Conid{A}\times\Conid{B}} in variable \ensuremath{\Varid{r}}, as stated in \ensuremath{\assert{\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}}} --- a valid Guabao program must end with an assertion stating its postcondition.
 The question mark indicates code yet to be written.
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
-\>[B]{}\mathbf{con}\;\Conid{A},\Conid{B}\mathbin{:}\Conid{Int}\;\assert{\Conid{A}\geq \mathrm{0}\mathrel{\wedge}\Conid{B}\geq \mathrm{0}}{}\<[E]%
+\>[B]{}\mathbf{con}\;\Conid{A},\Conid{B}\mathbin{:}\Conid{Int}\;\assert{\Conid{B}\geq \mathrm{0}}{}\<[E]%
 \printlineend\\
 \printlinebegin\>[B]{}\mathbf{con}\;\Varid{even},\Varid{odd}\mathbin{:}\Conid{Int}\to \Conid{Bool}{}\<[E]%
 \printlineend\\
@@ -685,16 +697,16 @@ The question mark indicates code yet to be written.
 
 Guabao parses and analyses the code as it is typed into the editor.
 Once the code is pasted into Guabao, we will see:\\
-\sshotimg{sshot00}
+\sshotimg{sshot00}\\
 Guabao automatically expands the question mark \ensuremath{\mathbin{?}} to a \emph{spec} — a hole in the program to be filled in, denoted by \ensuremath{[\mskip1.5mu \mathbin{!}\mathbin{...}\mathbin{!}\mskip1.5mu]}.
 The idea of a spec is inspired by Morgan~\cite{Morgan:90:Programming}, with a slight difference: in Morgan~\cite{Morgan:90:Programming} one starts program construction from a spec with given pre/postconditions, while in Guabao the pre/postconditions are inferred.
-The interface shows, on line 5 and 7, that code to be filled in shall bring the state of the system from precondition \ensuremath{\Conid{True}} to postcondition \ensuremath{\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}}. Properties of global constants (namely \ensuremath{\Conid{A}\geq \mathrm{0}\mathrel{\wedge}\Conid{B}\geq \mathrm{0}}) are universally true and implicitly conjuncted with all assertions. They are displayed separately in a ``Property'' section in the right pane.
+The interface shows, on line 5 and 7, that code to be filled in shall bring the state of the system from precondition \ensuremath{\Conid{True}} to postcondition \ensuremath{\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}}. Properties of global constants (namely \ensuremath{\Conid{B}\geq \mathrm{0}}) are universally true and implicitly conjuncted with all assertions. They are displayed separately in a ``Property'' section in the right pane.
 
 \paragraph{Introducing a Loop}
 For such a non-trival task we expects that a loop is needed,
 so we try to fill in the spec:
 \\\sshotimg{sshot01}\\
-To construct a loop we must think about its invariant and bound.
+Guabao syntactically enforces that each loop comes with a loop invariant and a bound.
 Various techniques were developed to construct candidates of loop invariants from the postcondition.
 We cannot properly cover the techniques in this paper but, for interested readers, we recommend Kaldewaij~\cite{Kaldewaij:90:Programming}.
 For this problem, we use one of the standard tricks:
@@ -705,17 +717,17 @@ therefore we let \ensuremath{\Varid{b}} be the bound (line 7).
 The loop body is left as a question mark.
 
 When the cursor is in the spec, press {\tt ctrl-c-r} to fill in the spec.
-In the screenshot in the top of Figure~\ref{fig:sshot23}, the code typed into the hole becomes part of the program,
+In the screenshot in Figure~\ref{fig:sshot2}, the code typed into the hole becomes part of the program,
 while the question mark becomes a new hole.
 \footnote{This style of interaction (including the hot-key combination) is inspired by Agda.}
-The pre/postconditions are calculated from {\sf InvInd}.
+The two POs shown on the right pane are respectively calculated {\sf InvBase} and {\sf TermBase}, while the pre/postconditions of the spec are calculated from {\sf InvInd}.
 %\\\sshotimg{sshot02}\\
 
-\begin{figure}
+\begin{figure}[t]
 \sshotimg{sshot02}\\
-\sshotimg{sshot03}
-\caption{Top: after introducing a loop. The POs come respectively from {\sf InvBase} and {\sf TermBase}. Pre/postconditions of the spec are from {\sf InvInd}. Bottom: clicking on the hash introduces a proof block.}
-\label{fig:sshot23}
+%\sshotimg{sshot03}
+\caption{After introducing a loop.}
+\label{fig:sshot2}
 \end{figure}
 
 \paragraph{The Interface}
@@ -731,7 +743,7 @@ The right pane contains information including
 \item global properties, etc.
 \end{itemize}
 Since the number of POs can be large, in the right pane we display those on the path of the current location of the cursor.
-In Figure~\ref{fig:sshot23}, the cursor is at line 7, beginning of the loop.
+In Figure~\ref{fig:sshot2}, the cursor is at line 7, beginning of the loop.
 POs in the right pane include:
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -759,15 +771,10 @@ POs in the right pane include:
 \end{hscode}\resethooks
 %The first one is aforementioned {\sf InvBase}, while the second is {\sf TermBase}.
 
-Each PO comes with a hash key. Clicking on the hash key for the first PO, for example, results in the screenshot in the bottom of Figure~\ref{fig:sshot23}.
-%\\\sshotimg{sshot03}\\
-A new comment block having the hash key is added to the bottom of the code, in which the programmer can write up a proof of the corresponding property.
-A program is proven correct if all POs are proved.
-Hash key of a PO with a proof block is displayed in blue (see the top-right corner).
-Currently the system makes no attempt to check these proofs, however.
-They are just comments for the user.
-
-Once we start doing the proofs, it immediately turns out that we cannot prove {\sf TermBase} --- the premise does not guarantee \ensuremath{\Varid{b}\geq \mathrm{0}}! We thus realise that we need a stronger invariant. The new invariant would be
+The {\sf InvBase} PO is trivial to prove --- the invariant and the bound were designed to make it trivial.
+At the top of the box displaying this PO there is a icons of a magic wand.
+Clicking on it invokes the SMT solver Z3, which generates the output "Q.E.D", indicated that it is proved.
+The PO {\sf TermBase}, however, turns out to be falsifiable. Indeed, the premise does not guarantee \ensuremath{\Varid{b}\geq \mathrm{0}}! We thus realise that we need a stronger invariant. The new invariant would be:
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{21}{@{}>{\hspre}c<{\hspost}@{}}%
@@ -780,6 +787,15 @@ Once we start doing the proofs, it immediately turns out that we cannot prove {\
 \printlineend\ColumnHook
 \end{hscode}\resethooks
 After the user updates the invariant, the POs and the specs are updated accordingly.
+
+% Each PO comes with a hash key. Clicking on the hash key for the first PO, for example, results in the screenshot in the bottom of Figure~\ref{fig:sshot23}.
+% %\\\sshotimg{sshot03}\\
+% A new comment block having the hash key is added to the bottom of the code, in which the programmer can write up a proof of the corresponding property.
+% A program is proven correct if all POs are proved.
+% Hash key of a PO with a proof block is displayed in blue (see the top-right corner).
+% Currently the system makes no attempt to check these proofs, however.
+% They are just comments for the user.
+
 
 \paragraph{Constructing the Loop Body}
 Now we attempt to construct the loop body.
@@ -815,17 +831,16 @@ to a state satisfying
 \end{hscode}\resethooks
 What can we do?
 
-\begin{figure}[h]
+\begin{figure}[th]
 \sshotimg{sshot04}\\
 \sshotimg{sshot05}
 \caption{Top: guessing that the last statement could be \ensuremath{\Varid{b}\mathbin{:=}\Varid{b}\mathbin{/}\mathrm{2}}.
-Bottom: trying to fill in \ensuremath{\Varid{b}\mathbin{:=}\Varid{b}\times\mathrm{2}} in the loop body. It will turn out that we cannot prove {\sf TermInd}.}
+Bottom: trying to fill in \ensuremath{\Varid{b}\mathbin{:=}\Varid{b}\times\mathrm{2}} in the loop body --- we cannot prove the PO.}
 \label{fig:sshot45}
 \end{figure}
 
 One possibility is filling in \ensuremath{\Varid{b}\mathbin{:=}\Varid{b}\times\mathrm{2}}.
-That, however, results in the bottom of Figure~\ref{fig:sshot45}, where
-Proof obligation {\sf TermInd}, shown in the right pane, demands us to prove that
+That, however, results in the bottom of Figure~\ref{fig:sshot45}, where the PO shown in the right pane, which is a consequence of {\sf TermInd} demands us to prove that
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -836,8 +851,9 @@ where \ensuremath{{?bnd_{51}}} is a system-generated logical variable.
 This property cannot be proved, and
 we learn that \ensuremath{\Varid{b}\mathbin{:=}\Varid{b}\times\mathrm{2};\Varid{b}\mathbin{:=}\Varid{b}\mathbin{/}\mathrm{2}} is a bad idea as the loop body --- the bound \ensuremath{\Varid{b}} does not decrease.
 
-Another possible choice is \ensuremath{\Varid{a}\mathbin{:=}\Varid{a}\times\mathrm{2}}.
-For that we have to prove an proof obligation induced from {\sf InvInd}, which simplifies to
+Another possible choice is \ensuremath{\Varid{a}\mathbin{:=}\Varid{a}\times\mathrm{2}}. If we try this option:\\
+\sshotimg{sshot06}\\
+It turns out that we have to prove a PO that simplifies to
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{36}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -846,7 +862,23 @@ For that we have to prove an proof obligation induced from {\sf InvInd}, which s
 \>[36]{}\mathrel{\Rightarrow}~~((\Varid{a}\times\mathrm{2})\times(\Varid{b}\mathbin{/}\mathrm{2}))\mathbin{+}\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}\mathbin{....}{}\<[E]%
 \printlineend\ColumnHook
 \end{hscode}\resethooks
-which, under integral division, can be true \emph{provided that \ensuremath{\Varid{b}} is an even number}.
+This time we demonstrate a manual proof.
+Each PO comes with a hash key.
+Clicking on the hash key ({\sf \#5F2E722} in the screenshot above) for the PO creates
+a new comment block labelled by the hash key, in which the programmer can write
+up a proof of the corresponding property.
+Hash key of a PO with a proof block is displayed in blue.
+A program is proven correct if all POs are either proved by Z3 or by the programmer.
+
+Currently the system makes no attempt to check the proofs written by the user ---
+in a lecture the proofs would be checked by a teacher.
+It is our future work to develop a language that is suitable for manual calculational proofs and yet machine-verifiable.
+
+% They are just comments for the user.
+% Hash key of a PO with a proof block is displayed in blue (see the top-right corner).
+%
+
+It turns out that, to prove the PO, we will need \ensuremath{\Varid{b}} to be a even number (line 17 in the screenshot), assuming integral division.
 This is a hint that we shall wrap \ensuremath{\Varid{a}\mathbin{:=}\Varid{a}\times\mathrm{2};\Varid{b}\mathbin{:=}\Varid{b}\mathbin{/}\mathrm{2}} in a guard \ensuremath{\Varid{even}\;\Varid{b}}, to ensure that \ensuremath{\Varid{b}} is even, and put it in an \ensuremath{\mathbf{if}} construct.
 The current code is:
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
@@ -865,11 +897,11 @@ The current code is:
 \printlinebegin\>[B]{}\hsindent{3}{}\<[3]%
 \>[3]{}\mathbf{fi}{}\<[E]%
 \printlineend\\
-\printlinebegin\>[B]{}\mathbf{od}{}\<[E]%
+\printlinebegin\>[B]{}\mathbf{od}~~.{}\<[E]%
 \printlineend\ColumnHook
 \end{hscode}\resethooks
 
-\paragraph{Totalising \ensuremath{\mathbf{if}}}
+\paragraph{Totalisation}
 We are not done yet. Among all the POs we will be asked to prove that \ensuremath{\mathbf{if}} is total --- every possible case is covered.
 Therefore we need to think about what to do in the \ensuremath{\Varid{odd}\;\Varid{b}} case. For this case we might decrease \ensuremath{\Varid{b}} by \ensuremath{\Varid{b}\mathbin{:=}\Varid{b}\mathbin{-}\mathrm{1}}. By a similar process we can construct what to do with \ensuremath{\Varid{a}} and \ensuremath{\Varid{r}} in this case to maintain the invariant. A possible final program would be (omitting the declarations):
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
@@ -903,7 +935,7 @@ Therefore we need to think about what to do in the \ensuremath{\Varid{odd}\;\Var
 \printlineend\\
 \printlinebegin\>[B]{}\mathbf{od}{}\<[E]%
 \printlineend\\
-\printlinebegin\>[B]{}\assert{\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}}{}\<[E]%
+\printlinebegin\>[B]{}\assert{\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}}~~,{}\<[E]%
 \printlineend\ColumnHook
 \end{hscode}\resethooks
 which computes \ensuremath{\Conid{A}\times\Conid{B}} using $O(\log B)$ atomic arithmetic operations.
@@ -965,15 +997,38 @@ The interface of Guabao aims to encourage such interaction.
 %      \end{subfigure}
 % \end{figure}
 
+
+\begin{figure}[th]
+\sshotimg{mss}
+\caption{The \emph{maximum segment sum} problem.}
+\label{fig:mss}
+\end{figure}
+
+\paragraph{Other Features}
+Figure~\ref{fig:mss} presents the classical \emph{maximum segment sum} problem, which demonstrates some features we have not mentioned in the previous example.
+Given an array of \ensuremath{\Conid{N}} integers (line 2), the goal is to find the maximum possible some of a consecutive segment.
+The postcondition on line 17 formally describes the goal --- see the use of Eindhoven notation for quantifiers, which denotes ``for \ensuremath{\mathrm{0}\leq \Varid{i}\leq \Varid{j}\leq \Conid{N}}, collect \ensuremath{\Varid{sum}\;\Varid{i}\;\Varid{j}} and find the largest \ensuremath{(\mathbin{\uparrow})},  where \ensuremath{\Varid{i}} and \ensuremath{\Varid{j}} are bound variables.''
+Guabao supports arrays that can be nested and mutable (if declared in \ensuremath{\mathbf{var}}).
+Pure functions to be used in assertions can be defined in declaration blocks \ensuremath{\{\mskip1.5mu \mathbin{:}\mathbin{...}\mathbin{:}\mskip1.5mu\}}.
+Shown in the right pane a PO induced from {\sf InvInd} --- that the invariant holds after one more iteration of the loop.
+The notation \ensuremath{\Conid{P}\;\lbrack\Varid{s}\backslash\Varid{s}\mathbin{\uparrow}\Varid{r}\rbrack} denotes substituting \ensuremath{\Varid{s}\mathbin{\uparrow}\Varid{r}} for all free occurrences of \ensuremath{\Varid{s}} in \ensuremath{\Conid{P}}, which appears in the PO as a consequences of \ensuremath{\Varid{s}\mathbin{:=}\Varid{s}\mathbin{\uparrow}\Varid{r}} in the code. Clicking on \ensuremath{\Conid{P}} expands its definition and performs the substitution.
+
+Like the previous example, development of this program was not done in one step.
+The usual story goes like: we started with a spec without \ensuremath{\Varid{r}}, using \ensuremath{\Conid{P}\mathrel{\wedge}\mathrm{0}\leq \Varid{n}\leq \Conid{N}} as the loop invariant, and the first attempt was to construct the main loop with \ensuremath{\Varid{n}\mathbin{:=}\Varid{n}\mathbin{+}\mathrm{1}} as its \emph{last} step. While trying to satisfy the spec and prove {\sf InvInd}, we would discover that, to update \ensuremath{\Varid{s}} quickly, we may strengthen the invariant with a variable \ensuremath{\Varid{r}}, storing the maximum \emph{suffix} sum, as stated by \ensuremath{\Conid{Q}\;\Varid{n}}, which was also discovered during the proof. The interface of Guabao wishes to make this process natural and smooth.
+
 \section{Behind the Scenes}
+\label{sec:po-generation}
 
 A central part of the backend of Guabao is an engine that scans through the code, generates a collection of POs, and infers the pre/post conditions of specs.
 In this section we examine the design of this engine.
 
 When seeing a Hoare triple \ensuremath{\htriple{\Conid{P}}{\Conid{S}}{\Conid{Q}}}, Guabao invokes the ternary function \ensuremath{\lBrace\anonymous \rBrace\,\anonymous \,\lBrace\anonymous \rBrace}, summarised in Figure~\ref{fig:struct}, to generate POs.
+The function \ensuremath{\lBrace\anonymous \rBrace\,\anonymous \,\lBrace\anonymous \rBrace} will be discussed in more details later.
 To understand it, however, we shall start with some discussion on the interplay between assertions and POs.
-\todo{Briefly describe the relation of wp, assertions and PO}
+%\todo{Briefly describe the relation of wp, assertions and PO}
 %something like: "The algorithm generating POs is described below: it involves the concept of weakest precondition and how the programmer places the assertions among the program"
+%SCM: but that's what I am going to discuss. I added a sentence: The function |struct _ _ _| will be discussed in more details later.
+
 
 \paragraph{Weakest preconditions}
 It is known that for every statement \ensuremath{\Conid{S}}, one can compute \ensuremath{\Varid{wp}\;\Conid{S}\;\Conid{Q}}, its weakest precondition with respect to postcondition \ensuremath{\Conid{Q}}.
@@ -989,16 +1044,18 @@ In the patterns between line \ref{code:wp:seq:0} -- \ref{code:wp:seq:3} in Figur
 and \ensuremath{(\Varid{s};\Varid{ss})} a sequence starting with a non-sequent statement followed by sequence \ensuremath{\Varid{ss}}.
 An empty sequence is denoted by \ensuremath{\epsilon}, and \ensuremath{\Varid{wp}\;\epsilon} is the identity function.
 For the \ensuremath{(\Varid{s};\Varid{ss})} case, we have the standard definition \ensuremath{\Varid{wp}\;(\Varid{s};\Varid{ss})\;\Conid{Q}\mathrel{=}\Varid{wp}\;\Varid{s}\;(\Varid{wp}\;\Varid{ss}\;\Conid{Q})}.
-\todo{Reorganize the paragraph}
+%\todo{Reorganize the paragraph}
 %something like: “The cases above are rules upon a single statement; since a program is usually constituted with a sequence of statements, we use the rules 7-10, to denote assertions and specs regarding a statement sequence. |({P} Ss)| denotes...”
+%SCM: I tried to refrain from categorising the previous cases as "single statements" since IF and DO are both compound statements.
 
 The last two cases on line \ref{code:wp:seq:2} -- \ref{code:wp:seq:3} reveal that \ensuremath{\Varid{wp}} actually returns a monadic value.
-For brevity we have pretended that \ensuremath{\Varid{wp}} returns a pure value in simpler cases,
+For brevity we have pretended that \ensuremath{\Varid{wp}} returns a pure value in previous cases,
 omitted the Haskell-ish \ensuremath{\mathbf{do}} keyword,
 and spelled out the keyword \ensuremath{\Varid{return}} only when it follows an effectful operation.
 More about these two cases will be discussed later.
-\todo{Reorganize the paragraph}
+%\todo{Reorganize the paragraph}
 %something like: “|wp| is actually returning a monadic value. For brevity, we have pretended that |wp| returns a pure value in simpler cases(line1-8); when it involves effectful operations -- tellPO and tellSpec, which can be seen in the last two rules --, we explicitly spell out the keyword |return|, omitting the Haskell-ish |do| keyword.”
+%SCM: We used return in line 10 too, which does not contain tellPO and tellSpec.
 
 % this is how I see the logical flow of these 3 paragraphs: from dealing with simple cases to its true, monadic nature.
 
@@ -1012,10 +1069,9 @@ More about these two cases will be discussed later.
 \column{16}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{18}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{21}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{24}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{36}{@{}>{\hspre}c<{\hspost}@{}}%
 \column{36E}{@{}l@{}}%
-\column{46}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{49}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
 \>[B]{}\Varid{wp}\;\Varid{abort}\;{}\<[14]%
@@ -1034,12 +1090,16 @@ More about these two cases will be discussed later.
 \printlinebegin\>[B]{}\hsindent{3}{}\<[3]%
 \>[3]{}(\Conid{B}_{0}\mathrel{\vee}\Conid{B}_{1})\mathrel{\wedge}(\Conid{B}_{0}\Rightarrow \Varid{wp}\;\Conid{S}_{0}\;\Conid{Q})\mathrel{\wedge}(\Conid{B}_{1}\Rightarrow \Varid{wp}\;\Conid{S}_{1}\;\Conid{Q}){}\<[E]%
 \printlineend\\
-\printlinebegin\>[B]{}\Varid{wp}\;(\mathbf{do}\;\Conid{B}_{i}\to \Conid{S}_{i}\;\mathbf{od})\;{}\<[24]%
-\>[24]{}\Conid{Q}\mathrel{=}\mathbin{??}{}\<[E]%
+\printlinebegin\>[B]{}\Varid{wp}\;(\mathbf{do}\;\Conid{B}_{0}\to \Conid{S}_{0}{}\<[18]%
+\>[18]{}\mid \Conid{B}_{1}\to \Conid{S}_{1}\;\mathbf{od})\;{}\<[34]%
+\>[34]{}\Conid{Q}\mathrel{=}{}\<[E]%
+\printlineend\\
+\printlinebegin\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mu\;(\Conid{X}\to ((\Conid{B}_{0}\mathrel{\wedge}\Conid{B}_{1})\mathrel{\vee}\Conid{Q})\mathrel{\wedge}(\Conid{B}_{0}\Rightarrow \Varid{wp}\;\Conid{S}_{0}\;\Conid{X})\mathrel{\wedge}(\Conid{B}_{1}\Rightarrow \Varid{wp}\;\Conid{S}_{1}\;\Conid{X})){}\<[E]%
 \printlineend\\[\blanklineskip]%
 \printlinebegin\>[B]{}\Varid{wp}\;\epsilon\;{}\<[13]%
-\>[13]{}\Conid{Q}\mathrel{=}\Conid{Q}{}\<[46]%
-\>[46]{}\label{code:wp:seq:0}{}\<[E]%
+\>[13]{}\Conid{Q}\mathrel{=}\Conid{Q}{}\<[49]%
+\>[49]{}\label{code:wp:seq:0}{}\<[E]%
 \printlineend\\
 \printlinebegin\>[B]{}\Varid{wp}\;(\Varid{s};\Varid{ss})\;{}\<[13]%
 \>[13]{}\Conid{Q}\mathrel{=}\Varid{wp}\;\Varid{s}\;(\Varid{wp}\;\Varid{ss}\;\Conid{Q}){}\<[E]%
@@ -1059,7 +1119,6 @@ More about these two cases will be discussed later.
 \printlineend\ColumnHook
 \end{hscode}\resethooks
 %wp (IF B0 -> S0  | B1 -> S1 FI) Q  = (B0 || B1) && (Bi => wp Si Q)
-
 \numbersoff
 \numbersreset
 \caption{The weakest precondition predicate transformer.}
@@ -1069,13 +1128,17 @@ More about these two cases will be discussed later.
 \paragraph{Assertions and POs}
 The conventional definition of a Hoare triple is \ensuremath{\htriple{\Conid{P}}{\Conid{S}}{\Conid{Q}}\,\mathrel{=}\,(\Conid{P}\mathrel{\Rightarrow}\Varid{wp}\;\Conid{S}\;\Conid{Q})}.
 The main programs in Guabao also come in the form \ensuremath{\htriple{\Conid{P}}{\Conid{S}}{\Conid{Q}}}.
-To establish the correctness of a completed program we could simply let the PO be the monolithic property \ensuremath{\Conid{P}\mathrel{\Rightarrow}\Varid{wp}\;\Conid{S}\;\Conid{Q}}.
-This is not helpful for program construction, however.
-We wish to produce POs that give hints to to each program component that needs to be constructed.
+To establish the correctness of a completed program, we could simply let the PO be the monolithic property \ensuremath{\Conid{P}\mathrel{\Rightarrow}\Varid{wp}\;\Conid{S}\;\Conid{Q}}.
+However, this is not helpful for program construction.
+%because this would be the same as splitting program construction and proof of correctness.
+%SCM: hmm.. the reason is more subtle.
+We wish to produce POs that give hints to each program component that needs to be constructed.
 PO generation is therefore an design issue:
 we want to generate POs that are useful for program construction, and moderate in size and number.
 
-Given a sequence of statements, how assertions are placed reflects the intention of the programmer. Therefore, in order to create "helpful" POs, we should take this into consideration. For example, given the program fragment below:
+On one thing, according to Figure~\ref{fig:wp}, a PO can be broken down along the structure of the program.
+On another, given a sequence of statements, how assertions are placed reflects the intention of the programmer.
+For example, given the program fragment below:
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{35}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -1084,10 +1147,12 @@ Given a sequence of statements, how assertions are placed reflects the intention
 \>[35]{}~~,{}\<[E]%
 \printlineend\ColumnHook
 \end{hscode}\resethooks
-where \ensuremath{\Conid{S}_{0}} -- \ensuremath{\Conid{S}_{3}} are statements containing no assertions or specs,
-we emit two POs: \ensuremath{\Conid{R}\mathrel{\Rightarrow}\Varid{wp}\;\Conid{S}_{2}\;(\Varid{wp}\;\Conid{S}_{3}\;\Conid{Q})}, and
-\ensuremath{\Conid{P}\mathrel{\Rightarrow}\Varid{wp}\;\Conid{S}_{0}\;(\Varid{wp}\;\Conid{S}_{1}\;\Conid{R})}.
-That is, we assume that \ensuremath{\Conid{R}}, an assertion intentionally left there by the programmer, represents all what the programmer wishes to establish at this point and contains all the information about the current state needed to prove the program correct.
+where \ensuremath{\Conid{S}_{0}} -- \ensuremath{\Conid{S}_{3}} are statements containing no assertions or specs.
+%SCM: The previous line cannot be omitted. Otherwise Guabao would not generate the PO below as claimed.
+This could be reflecting the intention that, at the point between \ensuremath{\Conid{S}_{1}} and \ensuremath{\Conid{S}_{2}},
+the programmer wishes to conclude all the information about the current state, which can be used to prove the correctness of the former and the latter part of the program separately.
+Therefore, Guabao should emit two POs: \ensuremath{\Conid{R}\mathrel{\Rightarrow}\Varid{wp}\;\Conid{S}_{2}\;(\Varid{wp}\;\Conid{S}_{3}\;\Conid{Q})}, and \ensuremath{\Conid{P}\mathrel{\Rightarrow}\Varid{wp}\;\Conid{S}_{0}\;(\Varid{wp}\;\Conid{S}_{1}\;\Conid{R})}.
+
 Note that this is stronger than the traditional definition:
 \ensuremath{\Varid{wp}\;\assert{\Conid{R}}\;\Conid{Q}\mathrel{=}\Conid{R}\mathrel{\wedge}\Conid{Q}}.
 Consider the following programs (assuming \ensuremath{\Varid{x},\Varid{z}\mathbin{:}\Conid{Int}}):
@@ -1110,9 +1175,9 @@ All of them can easily be discharged.
 In contrast, while ${\sf P}_2$ is a valid program in the traditional setting, Guabao would generate an unprovable PO: \ensuremath{\Conid{True}\mathrel{\Rightarrow}\Varid{x}\mathbin{/}\mathrm{2}\geq \mathrm{0}} (and a trivial PO: \ensuremath{\Varid{z}\mathbin{>}\Varid{x}\mathrel{\Rightarrow}\Conid{True}}).
 We believe that this is suitable for Guabao, which is not designed to prove programs in general, but to construct programs with an intention in mind.
 
-It is also worth noting that, while some tools for program construction demand programmers to specify intermediate conditions between every sequenced statements (that is, to construct \ensuremath{\htriple{\Conid{P}}{\Conid{S}_{0};\Conid{S}_{1}}{\Conid{Q}}} the user has to provide \ensuremath{\Conid{R}} such that \ensuremath{\htripletwo{\Conid{P}}{\Conid{S}_{0}}{\Conid{R}}{\Conid{S}_{1}}{\Conid{Q}}} holds),
+It is also worth noting that, while some tools for program construction demand programmers to specify intermediate conditions between every sequenced statements (that is, to construct \ensuremath{\htriple{\Conid{P}}{\Conid{S}_{0};\Conid{S}_{1}}{\Conid{Q}}} the user has to provide \ensuremath{\Conid{R}} such that \ensuremath{\htripletwo{\Conid{P}}{\Conid{S}_{0}}{\Conid{R}}{\Conid{S}_{1}}{\Conid{Q}}} holds, see Section~\ref{sec:related-works}),
 this is not so in Guabao. Instead, weakest preconditions are accumulated until we meet a programmer-inserted assertion, where we emit a PO.
-\todo{citation needed?}
+
 % It feels like usually, "while some tools for program construction demand..." needs a citation, I'm not sure if it's needed here.
 
 Having assertions helps to generate more specific POs.
@@ -1249,12 +1314,13 @@ As discussed before, assertions are treated differently.
 Furthermore, we need to infer pre/postconditions for specs.
 Therefore we partition a sequence of statements into segments separated by assertions or specs, and process them segment-by-segment.
 We call a sequence \emph{simple} if it contains no assertions or specs.
-In the patterns between line~\ref{code:struct:seq:0} and \ref{code:struct:seq:3}, \ensuremath{\Varid{ss}} denotes a (possibly empty) simple sequence of statements, while \ensuremath{\Conid{Ss}} denotes a general sequence.
+In the patterns between line~\ref{code:struct:seq:0} and \ref{code:struct:seq:3}, \ensuremath{\Varid{ss}} denotes a (possibly empty) simple sequence of statements, while \ensuremath{\Conid{Ss}} denotes any sequence.
 Lines \ref{code:struct:seq:0} -- \ref{code:struct:seq:1} deal with simple sequences.
 For an empty sequence we simply emit \ensuremath{\Conid{P}\mathrel{\Rightarrow}\Conid{Q}}.
 For \ensuremath{(\Varid{s};\Varid{ss})}, we compute \ensuremath{\Varid{wp}\;\Varid{ss}\;\Conid{Q}}, and let it be the postcondition for \ensuremath{\Varid{s}}.
-\todo{a question}
+%\todo{a question}
 % I'm not sure if the concept of general sequence is a commonsense in this community... what does it precisely mean here? From what I can see, It looks just like ss...
+% SCM: I've changed it to "any sequence".
 
 When the first simple segment \ensuremath{\Varid{ss}} is separated from the rest \ensuremath{\Conid{Ss}} by an assertion \ensuremath{\{\mskip1.5mu \Conid{R}\mskip1.5mu\}} (line \ref{code:struct:seq:2}), we recursively compute \ensuremath{\lBrace\Conid{P}\rBrace\,\Varid{ss}\,\lBrace\Conid{R}\rBrace} and \ensuremath{\lBrace\Conid{R}\rBrace\,\Conid{Ss}\,\lBrace\Conid{Q}\rBrace}.
 
@@ -1268,7 +1334,7 @@ It is valid if we generate \ensuremath{\Varid{ss}\;[\mskip1.5mu \mathbin{!}\Coni
 This is usually not very helpful, however.
 Instead, we compute the \emph{strongest postcondition} of \ensuremath{\Varid{s}} with respect to \ensuremath{\Conid{P}}, and use that as the precondition of the spec.
 The function \ensuremath{\Varid{sp}} that computes the strongest postcondition is defined in Figure~\ref{fig:sp}.
-When specs appears consecutively (e.g. \ensuremath{\Varid{ss}_{0}\;\lbrack!~!\rbrack\;\Varid{ss}_{1}\;\lbrack!~!\rbrack\;\Varid{ss}_{2}}), we will run into the last case of \ensuremath{\Varid{wp}} (line \ref{code:wp:seq:3} of Figure~\ref{fig:wp}), where we have no choice but create \ensuremath{[\mskip1.5mu \mathbin{!}\Conid{Q},\Conid{Q}\mathbin{!}\mskip1.5mu]}.
+When specs appears consecutively (e.g. \ensuremath{\Varid{ss}_{0}\;\lbrack!~!\rbrack\;\Varid{ss}_{1}\;\lbrack!~!\rbrack\;\Varid{ss}_{2}}), we will run into the last case of \ensuremath{\Varid{wp}} (line \ref{code:wp:seq:3} of Figure~\ref{fig:wp}), where we simply create \ensuremath{[\mskip1.5mu \mathbin{!}\Conid{Q},\Conid{Q}\mathbin{!}\mskip1.5mu]}.~\footnote{Another choice is to create a new logical variable \ensuremath{\Conid{V}} and let the spec be \ensuremath{[\mskip1.5mu \mathbin{!}\Conid{V},\Conid{Q}\mathbin{!}\mskip1.5mu]}, but since the user cannot directly edit \ensuremath{\Conid{V}}, this is not more helpful. The user may always specify the precondition of the spec by adding an assertion.}
 
 \begin{figure}[t]
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
@@ -1337,6 +1403,7 @@ As a result Guabao may end up generating unprovable POs, or produce impossible p
 To get around the problem, the helper function \ensuremath{\Varid{termInd}} returns nothing if the loop body \ensuremath{\Conid{S}} contains specs --- we postpone generating all POs until the program is finished. If \ensuremath{\Conid{S}} contains no specs, we generate a fresh logical variable \ensuremath{\Conid{C}}, and applies \ensuremath{\lBrace\anonymous \rBrace\,\anonymous \,\lBrace\anonymous \rBrace} to \ensuremath{\Varid{strip}\;\Conid{S}} --- which denotes \ensuremath{\Conid{S}} with all assertions removed.
 
 \section{Related Works}
+\label{sec:related-works}
 
 Before and during development of Guabao, we surveyed a number of projects designed for similar goals.
 It is worth comparing their design choices and consequences.
@@ -1375,13 +1442,34 @@ Due to the tactic-based approach, programs in CAPS are represented by and displa
 One of the advantages is that CAPS maintains the full history of program development.
 The user may easily roll back to a previous stage and start a new experimental branch.
 
-\section{Conclusions}
+\section{Conclusions and Future Work}
+\label{sec:conclude}
 
+We have presented a preliminary implementation of Guabao, an integrated environment for imperative program derivation.
+Its noticeable features, when compared with contemporary tools serving similar purposes, include: a free-form editing interface which encourages programs and proofs to be developed together; pre/postconditions of specs are inferred; assertions trigger generation of localised proof obligations.
 
-\subsubsection{Acknowledgements} Please place your acknowledgments at
-the end of the paper, preceded by an unnumbered run-in heading (i.e.
-3rd-level heading).
+We have used Guabao in an undergraduate course on imperative programming.
+Most of the feedback from students were suggestions about elements of the interface.
+For example, previous versions of Guabao labelled code with POs using wavy underline, which felt like errors to some students.
+Some students find it cumbersome using the UTF-8 input method.
+These suggestions helped to improve Guabao.
+It is still too preliminary, however, to draw conclusion on how much Guabao helps students in learning program derivation.
+We hope to conduct a more through survey when Guabao grows into a more matured system.
 
+A lot remains to be done.
+To begin with, Guabao needs to be equipped with a sufficient library of standard functions and subroutines.
+We also plan to extend Guabao with a number of features including procedure calls and ability to manipulate data structures with pointers.
+To describe properties of such structure, the language in the assertions of Guabao needs to be extended to a more complete functional language.
+Finally, to verify the proofs written by users, we need a formal representation of equational proofs.
+For this purpose, the aforementioned functional language could be designed to be a language with dependent type, in which proofs can be represented by Curry-Howard correspondence.
+Or we can delegate the job to an existing theorem prover and use its language.
+It remains to see what is the most suitable.
+
+\subsubsection{Acknowledgements}
+We would like to thank the members of PLFM group in IIS, Academia Sinica,
+in particular Bow-Yaw Wang, for his support of this project,
+and to members of IFIP Working Group 2.1, in particular Carroll Morgan,
+for his insightful opinions and valuable discussions.
 
 %% Bibliography
 \bibliographystyle{splncs04}
