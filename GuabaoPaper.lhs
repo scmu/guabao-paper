@@ -39,7 +39,7 @@ Hsien-En Tzeng\inst{2}%
 \authorrunning{S-C. Mu  et al.}
 
 \institute{
-Institute of Information Science, %\\
+%Institute of Information Science, %\\
 Academia Sinica, Taiwan \and
 National Taiwan University, Taiwan
 }
@@ -48,12 +48,10 @@ National Taiwan University, Taiwan
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-
 Guabao is an integrated environment for imperative program derivation --- the process of formally and step-wise constructing a program from its specification.
 As the programmer types in the code, in a variation of Guarded Command Language,
 Guabao computes its proof obligations in an interface that encourages the program and its correctness proof to be developed hand in hand.
-We present the user experience of Guabao, the algorithm it uses to compute proof obligations and infer pre/postconditions, and talk about our preliminary experience using it in an undergraduate course.
-
+We present the user experience of Guabao, the algorithm it uses to compute proof obligations and infer pre/postconditions, and compare it with contemporary tools serving similar purposes.
 \keywords{program derivation \and integrated developing environment \and proofs}
 \end{abstract}
 
@@ -92,7 +90,7 @@ The aim is to develop a programming environment having the following features:
 \item It encourages {\bf developing proofs and programs together}.
 While the user may certainly write up all the code in Guabao and verify it afterwards, the interface shall allow the user to interleave proving and coding, and let the two modes aid each other.
 \item It encourages {\bf backward-reasoning}.
-Since it is easier to construct the weakest precondition of an assignment from its postcondition than the other way round,
+Since it is easier to construct the weakest precondition of an assignment (|x := e|) from its postcondition than the other way round,
 to construct a block of statements, many derivation techniques start with thinking about what the \emph{last assignment} could be.
 The interface of Guabao should make such construction easy and natural.
 \item It allows {\bf free-form text editing}, as opposed to treating programs as diagrams as some program construction tools do, since we believe it what most programmers would prefer.
@@ -104,18 +102,30 @@ It might also help to clarify what Guabao is not:
 Dijkstra~\cite{Dijkstra:98:Cruelty} wrote that he would
 design a programming language for teaching (which we believe would be GCL) and ``see to it that [it] has not been implemented on campus so that students are protected from the temptation to test their programs.''
 Gaubao is not an implementation of GCL in which one can write a program and test it, but an environment where a program and its proof can be designed together.
-One cannot yet execute the program --- although it is not difficult to implement an interepreter and allow a program to run once all proofs are done.
-\item \todo{Guabao does not check your proof.}
+% One cannot yet execute the program --- although it is not difficult to implement an interpreter and allow a program to run once all proofs are done.
+\item Guabao does not intend to prove \emph{everything} regard the correctness of the program for the user.
+Instead, it computes the proof obligations needed to guarantee correctness, and let them guide the development of the said program.
+Guabao does employ an SMT solver (currently Z3~\cite{MS:12:Z3}) to discharge simple proof obligations.
+However, we believe that proving properties that are related to the algorithmic aspect of a program and, in case of failure, learn from the proof how the program should evolve to allow the proof to go through, is a part of the program development process, which should be carried out by the user.
+It is especially so in a course teaching program derivation.
+Currently Guabao does not check user-written proofs.
+To do so we shall develop a representation of equational proofs, which is one of our future works.
 \end{enumerate}
 
-Currently, Guabao is implemented as an extension of the editor Visual Studio Code,
+Guabao is implemented as an extension of the editor Visual Studio Code,
 which can be installed by searching for the extension "Guabao" in the editor, or through its Extensions Marketplace~\footnote{\url{https://marketplace.visualstudio.com/items?itemName=scmlab.guabao}}.
-A simple one-click installation downloads the frontend and the pre-compiled backend.
+A simple one-click installation downloads the frontend and the pre-compiled backend.%
+~\footnote{Z3 has to be installed separately, however.}
 %The readers are welcomed to give it a try!
-The backend of Guabao is implemented using Haskell~\cite{PeytonJones:03:Haskell}, while the frontend is implemented using Reason~\cite{Walke:16:Reason} and compiled to Javascript to run as a VS Code extension.
+The backend of Guabao is implemented using Haskell~\cite{PeytonJones:03:Haskell}, while the frontend is implemented using Reason~\cite{Walke:16:Reason} and compiled to Javascript to run in VS Code.
 Regarding its name,
 GUA in Guabao comes from GUArded command language.
 Guabao (\cjk{刈包}) is a street food popular in places including Taiwan, where Guabao the software was designed.
+
+After giving a brief review of the Guarded Command Language in Section~\ref{sec:gcl}, we demonstrate how it is like using Guabao by a simple example in Section~\ref{sec:programming-example}.
+Section~\ref{sec:po-generation} presents the algorithm we use to generate proof obligations and infer pre/postconditions of specs.
+We compare Guabao with some other tools in Section~\ref{sec:related-works}
+before we conclude in Section~\ref{sec:conclude}.
 
 \section{The Guarded Command Language}
 \label{sec:gcl}
@@ -137,7 +147,8 @@ Definitions of |Expr| and |Type| are omitted.}
 \end{figure}
 
 Guabao uses a variation of the Guarded Command Language (GCL)~\cite{Dijkstra:75:Guarded},
-which we will briefly review in this section for completeness.
+which we will briefly review in this section,
+emphasising on what needs to be proved about a given statement.
 A condensed presentation of its abstract syntax is given in Figure~\ref{fig:gcl-syntax}.
 A program consists of a section of declarations followed by a section of statements.
 Constant and variable declarations respectively start with keywords |VAR| and |CON|.
@@ -161,8 +172,8 @@ The operator |:=| denotes assignment; parallel assignment of multiple variables 
 A \emph{guarded command} |B -> S|, where |B| is a Boolean-valued expression, denotes a command where |S| is executed only if the \emph{guard} |B| evaluates to |True|.
 
 Guarded commands alone do not form a complete statement.
-A group of guarded commands surrounded by |IF ... FI| denotes conditional branches.
-For example, |IF B0 -> S0 || B1 -> S1 FI| has two branches, where |Si| is executed if |Bi| holds (|i `elem` {0,1}|).
+The statement |IF ... FI|, enclosing a group of guarded commands, denotes conditional branches.
+For example, |IF B0 -> S0 || B1 -> S1 FI| has two branches, where |S_i| is executed if |B_i| holds (|i `elem` {0,1}|).
 If both |B0| and |B1| holds, \emph{one} of the branches is nondeterministically executed.
 If neither holds, the program aborts.
 To prove that
@@ -418,6 +429,7 @@ The interface of Guabao aims to encourage such interaction.
 % \end{figure}
 
 \section{Behind the Scenes}
+\label{sec:po-generation}
 
 A central part of the backend of Guabao is an engine that scans through the code, generates a collection of POs, and infers the pre/post conditions of specs.
 In this section we examine the design of this engine.
@@ -649,6 +661,7 @@ As a result Guabao may end up generating unprovable POs, or produce impossible p
 To get around the problem, the helper function |termInd| returns nothing if the loop body |S| contains specs --- we postpone generating all POs until the program is finished. If |S| contains no specs, we generate a fresh logical variable |C|, and applies |struct _ _ _| to |strip S| --- which denotes |S| with all assertions removed.
 
 \section{Related Works}
+\label{sec:related-works}
 
 Before and during development of Guabao, we surveyed a number of projects designed for similar goals.
 It is worth comparing their design choices and consequences.
@@ -688,6 +701,7 @@ One of the advantages is that CAPS maintains the full history of program develop
 The user may easily roll back to a previous stage and start a new experimental branch.
 
 \section{Conclusions and Future Work}
+\label{sec:conclude}
 
 We have presented a preliminary implementation of Guabao, an integrated environment for imperative program derivation.
 Its noticeable features, when compared with contemporary tools serving similar purposes, include: a free-form editing interface which encourages programs and proofs to be developed together; pre/postconditions of specs are inferred; assertions trigger generation of localised proof obligations.
