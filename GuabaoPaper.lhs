@@ -75,8 +75,7 @@ The program is then derived by manipulating the pre/postconditions using various
 Various previous work~\cite{Dijkstra:76:Discipline,%
 Gries:81:Science,Kaldewaij:90:Programming,Morgan:90:Programming,%
 Backhouse:03:Program,Backhouse:11:Algorithmic} collectively developed a methodology of program development from specification, equipped with techniques for constructing a loop invariant from a desired postcondition, constructing the loop body from its last step, ensuring termination, etc.
-This methodology was applied to derive algorithms
-solving individual small problems
+This methodology was applied to derive algorithms solving individual small problems
 (e.g~\cite{Rem:89:Small,Rem:90:Small}) as well as families of problems (e.g~\cite{Zantema:92:Longest}).
 % Meanwhile, derivation of functional programs, a closely related topic, has also been developing (e.g~\cite{Bird:10:Pearls}).
 Within the advocating community it is at least wished that the concept of program derivation should be taught as part of the fundamental training for programmers and computing science majors.
@@ -88,7 +87,7 @@ Therefore we created Guabao.
 The aim is to develop a programming environment having the following features:
 \begin{enumerate}
 \item It encourages {\bf developing proofs and programs together}.
-While the user may certainly write up all the code in Guabao and verify it afterwards, the interface shall allow the user to interleave proving and coding, and let the two modes aid each other.
+While the user may certainly write up all the code in Guabao and verify it afterwards, the interface shall encourage the user to interleave proving and coding, and let the two modes aid each other.
 \item It encourages {\bf backward-reasoning}.
 Since it is easier to construct the weakest precondition of an assignment (|x := e|) from its postcondition than the other way round,
 to construct a block of statements, many derivation techniques start with thinking about what the \emph{last assignment} could be.
@@ -109,7 +108,7 @@ Guabao does employ an SMT solver (currently Z3~\cite{MS:12:Z3}) to discharge sim
 However, we believe that proving properties that are related to the algorithmic aspect of a program and, in case of failure, learning from the proof how the program should evolve to allow the proof to go through, is a part of the program development process, which should be carried out by the user.
 It is especially so in a course teaching program derivation.
 Currently Guabao does not check user-written proofs.
-To do so we shall develop a representation of equational proofs, which is one of our future works.
+To do so we need to develop a representation of equational proofs, which is one of our future works.
 \end{enumerate}
 
 Guabao is implemented as an extension of the editor Visual Studio Code,
@@ -156,7 +155,7 @@ They can be accompanied by an optional assertion stating properties we assume ab
 
 An assertion is a Boolean-valued expression in curly brackets.
 By the convention of the program derivation community, a \emph{Hoare triple} |htriple P S Q| denotes total correctness: that is, the program |S|, when executed in a state satisfying |P|, \emph{terminates} in a state satisfying |Q|.
-We prefer it than the partial correctness interpretation (that is, |S| establishes |Q| \emph{if} it terminates) because, as we will see in Section~\ref{sec:programming-example}, that the program must terminate provides useful hints about how it can be written.
+We prefer it over the partial correctness interpretation (that is, |S| establishes |Q| \emph{if} it terminates) because, as we will see in Section~\ref{sec:programming-example}, that the program must terminate provides useful hints about how it can be written.
 % The notation |[!pre, post!]| denotes a \emph{spec} --- a hole yet to be filled in with code that shall establish the postcondition |post| provided that precondition |pre| is satisfied.
 
 % For example, the following is an unfinished program that, upon exit, stores the value of |A * B| in |r|, provided that both |A| and |B| are non-negative.
@@ -199,12 +198,6 @@ Once we introduce such a loop, however, we have also given ourselves \emph{four}
 {-"\mbox{3. \sf TermBase}:\qquad"-}  P && (B0 || B1) ==> e >= 0 {-"~~,"-}
 {-"\mbox{4. \sf TermInd}:\qquad"-}   htriple (P && Bi && e = C) Si (e < C) {-"\mbox{,~~for~}"-} i `elem` {0,1} {-"~~."-}
 \end{spec}
-% \begin{enumerate}
-% \item[({\sf InvBase})] |P && not (B0 |||| B1) ==> Q|,
-% \item[({\sf InvInd})] |htriple (P && Bi) Si P| for |i `elem` {0,1}|,
-% \item[({\sf TermBase})] |P && (B0 |||| B1) ==> e >= 0|,
-% \item[({\sf TermInd})] |htriple (P && Bi && e = C) Si (e < C)| for |i `elem` {0,1}|.
-% \end{enumerate}
 Properties {\sf InvBase} and {\sf InvInd} guarantee that the loop is partially correct: that is, if the loop terminates at all, it terminates in a state satisfying |Q|.
 {\sf TermBase} and {\sf TermInd} establish that the loop does terminate.
 The four properties together guarantee total correctness.
@@ -248,24 +241,24 @@ VAR r : Int
 % \end{figure}
 
 Guabao parses and analyses the code as it is typed into the editor.
-Once the code is pasted into Guabao, we will see:\\
+Once the code is entered, we will see:\\
 \sshotimg{sshot00}\\
 Guabao automatically expands the question mark |?| to a \emph{spec} — a hole in the program to be filled in, denoted by |[! ... !]|.
 The idea of a spec is inspired by Morgan~\cite{Morgan:90:Programming}, with a slight difference: in Morgan~\cite{Morgan:90:Programming} one starts program construction from a spec with given pre/postconditions, while in Guabao the pre/postconditions are inferred.
 The interface shows, on line 5 and 7, that code to be filled in shall bring the state of the system from precondition |True| to postcondition |r = A * B|. Properties of global constants (namely |B >= 0|) are universally true and implicitly conjuncted with all assertions. They are displayed separately in a ``Property'' section in the right pane.
 
 \paragraph{Introducing a Loop}
-For such a non-trival task we expects that a loop is needed,
+For such a non-trival task we expect that a loop is needed,
 so we try to fill in the spec:
 \\\sshotimg{sshot01}\\
 Guabao syntactically enforces that each loop comes with a loop invariant and a bound.
 Various techniques were developed to construct candidates of loop invariants from the postcondition.
-We cannot properly cover the techniques in this paper but, for interested readers, we recommend Kaldewaij~\cite{Kaldewaij:90:Programming}.
+We cannot properly cover all the techniques in this paper but, for interested readers, we recommend Kaldewaij~\cite{Kaldewaij:90:Programming}.
 For this problem, we use one of the standard tricks:
-choose |a * b + r = A * B| as the loop invariant (line 7), which can be established by initialisation |a, b, r := A, B, 0| (line 6).
+choosing |a * b + r = A * B| as the loop invariant (line 7), which can be established by initialisation |a, b, r := A, B, 0| (line 6).
 By letting the guard be |b /= 0| (line 8), the proof obligation {\sf InvBase} instantiates to |a * b + r = A * B && b = 0 ==> r = A * B|, which is trivial to prove.
-Now that the loop terminates when |b = 0|, a strategy would be to keep decreasing |b| in the loop body until it reaches |0|,
-therefore we let |b| be the bound (line 7).
+Now that the loop terminates when |b = 0|, a strategy would be to keep decreasing |b| in the loop body until it reaches |0|.
+Therefore we let |b| be the bound (line 7).
 The loop body is left as a question mark.
 
 When the cursor is in the spec, press {\tt ctrl-c-r} to fill in the spec.
@@ -287,7 +280,7 @@ Let us get a closer look at the interface of Guabao.
 %Now it is a good time to inspect the interface of Guabao.
 In the program in the left pane,
 blue shade in the code indicates ``there are proof obligations incurred here.''
-Program locations associated with more POs get a thicker shade.
+Program locations associated with more POs get thicker shades.
 The right pane contains information including
 \begin{itemize}
 \item inferred POs,
@@ -303,22 +296,14 @@ a * b + r = A * B  &&      b /= 0     ==>  b >= 0     {-"~~, \mbox{which is {\sf
 \end{spec}
 %The first one is aforementioned {\sf InvBase}, while the second is {\sf TermBase}.
 
-The {\sf InvBase} PO is trivial to prove --- the invariant and the bound were designed to make it trivial.
+The PO labelled {\sf InvBase} is trivial to prove --- the invariant and the bound were designed to make it trivial.
 At the top of the box displaying this PO there is a icons of a magic wand.
-Clicking on it invokes the SMT solver Z3, which generates the output "Q.E.D", indicated that it is proved.
-The PO {\sf TermBase}, however, turns out to be falsifiable. Indeed, the premise does not guarantee |b >= 0|! We thus realise that we need a stronger invariant. The new invariant would be:
+Clicking on it invokes the SMT solver Z3, which generates the output "Q.E.D.", indicating that it is proved.
+The PO labelled {\sf TermBase}, however, turns out to be falsifiable. Indeed, the premise does not guarantee |b >= 0|! We thus realise that we need a stronger invariant. The new invariant would be:
 \begin{spec}
  a * b + r = A * B  &&  b >= 0 {-"~~."-}
 \end{spec}
 After the user updates the invariant, the POs and the specs are updated accordingly.
-
-% Each PO comes with a hash key. Clicking on the hash key for the first PO, for example, results in the screenshot in the bottom of Figure~\ref{fig:sshot23}.
-% %\\\sshotimg{sshot03}\\
-% A new comment block having the hash key is added to the bottom of the code, in which the programmer can write up a proof of the corresponding property.
-% A program is proven correct if all POs are proved.
-% Hash key of a PO with a proof block is displayed in blue (see the top-right corner).
-% Currently the system makes no attempt to check these proofs, however.
-% They are just comments for the user.
 
 
 \paragraph{Constructing the Loop Body}
@@ -365,7 +350,7 @@ we learn that |b := b * 2; b := b / 2| is a bad idea as the loop body --- the bo
 
 Another possible choice is |a := a * 2|. If we try this option:\\
 \sshotimg{sshot06}\\
-It turns out that we have to prove a PO that simplifies to
+It turns out that we have to prove a PO that is essentially
 \begin{spec}
 (a * b) + r = A * B .... {-"~~"-}  ==> {-"~~"-} ((a * 2) * (b / 2)) + r = A * B ....
 \end{spec}
@@ -374,8 +359,8 @@ Each PO comes with a hash key.
 Clicking on the hash key ({\sf \#5F2E722} in the screenshot above) for the PO creates
 a new comment block labelled by the hash key, in which the programmer can write
 up a proof of the corresponding property.
-Hash key of a PO with a proof block is displayed in blue.
-A program is proven correct if all POs are either proved by Z3 or by the programmer.
+Hash key of a PO having a proof block is displayed in blue.
+A program is proven correct if all POs are proved either by Z3 or by the programmer.
 
 Currently the system makes no attempt to check the proofs written by the user ---
 in a lecture the proofs would be checked by a teacher.
@@ -398,7 +383,7 @@ OD {-"~~."-}
 
 \paragraph{Totalisation}
 We are not done yet. Among all the POs we will be asked to prove that |IF| is total --- every possible case is covered.
-Therefore we need to think about what to do in the |odd b| case. For this case we might decrease |b| by |b := b - 1|. By a similar process we can construct what to do with |a| and |r| in this case to maintain the invariant. A possible final program would be (omitting the declarations):
+Therefore we need to think about what to do in the |odd b| case. For this case we might decrease |b| using |b := b - 1|. By a similar process we can construct what to do with |a| and |r| in this case to maintain the invariant. A possible final program would be (omitting the declarations):
 \begin{spec}
 a, b, r := A, B, 0
 (assert (a * b + r = A * B && b >= 0, bnd: b))
@@ -431,7 +416,7 @@ The program is correct as long as one can prove all the POs.
 \paragraph{Summary}
 Let us recapitulate the interaction between a program and its proof in this example.
 Certainly, the program determines what ought to be proved --- introducing a statement also introduces corresponding POs.
-Meanwhile, these POs also gave hints on how to proceed with program construction.
+Meanwhile, these POs gave hints on how to proceed with program construction.
 One may design the program --- for example, choosing the loop guard or choosing a method to decrease the bound --- such that some POs are trivial to discharge.
 Pre/postconditions of a spec, inferred from future POs, shows what a piece of code is supposed to do.
 By observing what is missing in an attempted proof, one may learn how to strengthen the loop invariant, to enclose the program fragment in a guard, or learn that the current choice is simply wrong.
@@ -459,14 +444,14 @@ The interface of Guabao aims to encourage such interaction.
 \paragraph{Other Features}
 Figure~\ref{fig:mss} presents the classical \emph{maximum segment sum} problem, which demonstrates some features we have not mentioned in the previous example.
 Given an array of |N| integers (line 2), the goal is to find the maximum possible some of a consecutive segment.
-The postcondition on line 17 formally describes the goal --- see the use of Eindhoven notation for quantifiers, which denotes ``for |0 <= i <= j <= N|, collect |sum i j| and find the largest |(`max`)|,  where |i| and |j| are bound variables.''
+The postcondition on line 17 formally describes the goal --- notice the use of Eindhoven notation for quantification, which denotes ``for |0 <= i <= j <= N|, collect |sum i j| and find the largest |(`max`)|,  where |i| and |j| are bound variables.''
 Guabao supports arrays that can be nested and mutable (if declared in |VAR|).
-Pure functions to be used in assertions can be defined in declaration blocks |{: ... :}|.
-Shown in the right pane a PO induced from {\sf InvInd} --- that the invariant holds after one more iteration of the loop.
+Pure functions to be used in assertions can be defined in declaration blocks |{: ... :}| (line 5 -- 7 in Figure~\ref{fig:mss}).
+Shown in the right pane is a PO induced from {\sf InvInd} --- that the invariant holds after one more iteration of the loop.
 The notation |P (subst s (s `max`r))| denotes substituting |s `max`r| for all free occurrences of |s| in |P|, which appears in the PO as a consequences of |s := s `max` r| in the code. Clicking on |P| expands its definition and performs the substitution.
 
 Like the previous example, development of this program was not done in one step.
-The usual story goes like: we started with a spec without |r|, using |P && 0 <= n <= N| as the loop invariant, and the first attempt was to construct the main loop with |n := n + 1| as its \emph{last} step. While trying to satisfy the spec and prove {\sf InvInd}, we would discover that, to update |s| quickly, we may strengthen the invariant with a variable |r|, storing the maximum \emph{suffix} sum, as stated by |Q n|, which was also discovered during the proof. The interface of Guabao wishes to make this process natural and smooth.
+The usual story goes like: we started with a spec without |r|, using |P n  && 0 <= n <= N| as the loop invariant, and the first attempt was to construct the main loop with |n := n + 1| as its \emph{last} step. While trying to satisfy the spec and prove {\sf InvInd}, we would discover that, to update |s| quickly, we may strengthen the invariant with a variable |r|, storing the maximum \emph{suffix} sum, as stated by |Q n|, which was also discovered during the proof. The interface of Guabao wishes to make this process natural and smooth.
 
 \section{Behind the Scenes}
 \label{sec:po-generation}
@@ -575,7 +560,7 @@ In contrast, while ${\sf P}_2$ is a valid program in the traditional setting, Gu
 We believe that this is suitable for Guabao, which is not designed to prove programs in general, but to construct programs with an intention in mind.
 
 It is also worth noting that, while some tools for program construction demand programmers to specify intermediate conditions between every sequenced statements (that is, to construct |htriple P (S0; S1) Q| the user has to provide |R| such that |htriple2 P S0 R S1 Q| holds, see Section~\ref{sec:related-works}),
-this is not so in Guabao. Instead, weakest preconditions are accumulated until we meet a programmer-inserted assertion, where we emit a PO.
+this is not so in Guabao. Instead, weakest preconditions are accumulated until we meet an assertion, where we emit a PO.
 
 % It feels like usually, "while some tools for program construction demand..." needs a citation, I'm not sure if it's needed here.
 
@@ -632,9 +617,9 @@ struct P s Q = tellPO (P ==> wp s Q)  {-"\label{code:struct:simp}"-} -- other si
 struct P eps Q     = tellPO (P ==> Q)        {-"\label{code:struct:seq:0}"-}
 struct P (s;ss) Q  = Q' <- wp ss Q; struct P s Q'  {-"\label{code:struct:seq:1}"-}
 
-struct P (ss {R} Ss) Q   = struct P ss R; struct R Ss Q     {-"\label{code:struct:seq:2}"-}
+struct P (ss {R} Ss) Q    = struct P ss R; struct R Ss Q     {-"\label{code:struct:seq:2}"-}
 struct P (ss eSpec Ss) Q  =  P' <- sp s P; Q' <- wp Ss Q;  {-"\label{code:struct:seq:3}"-}
-                            tellSpec [!P', Q'!]
+                             tellSpec [!P', Q'!]
 
 termInd P e B S =  if containsSpec S then return ()
                         else  C <- newVar
@@ -655,7 +640,7 @@ Furthermore, we need to infer pre/postconditions for specs.
 Therefore we partition a sequence of statements into segments separated by assertions or specs, and process them segment-by-segment.
 We call a sequence \emph{simple} if it contains no assertions or specs.
 In the patterns between line~\ref{code:struct:seq:0} and \ref{code:struct:seq:3}, |ss| denotes a (possibly empty) simple sequence of statements, while |Ss| denotes any sequence.
-Lines \ref{code:struct:seq:0} -- \ref{code:struct:seq:1} deal with simple sequences.
+Line \ref{code:struct:seq:0} -- \ref{code:struct:seq:1} deal with simple sequences.
 For an empty sequence we simply emit |P ==> Q|.
 For |(s;ss)|, we compute |wp ss Q|, and let it be the postcondition for |s|.
 %\todo{a question}
@@ -699,7 +684,7 @@ sp (ss eSpec Ss)  P = tellSpec [!P,P!]; sp P Ss
 \end{figure}
 
 Finally, let us talk about the case for |DO ... OD|.
-Lines~\ref{code:struct:do:0} -- \ref{code:struct:do:3} in Figure~\ref{fig:struct}
+Line~\ref{code:struct:do:0} -- \ref{code:struct:do:3} in Figure~\ref{fig:struct}
 respectively correspond to {\sf InvBase}, {\sf InvInd}, {\sf TermBase}, and {\sf TermInd} discussed in Section~\ref{sec:gcl}.
 The last case is the most tricky.
 Recall that, according to {\sf TermInd},
@@ -729,12 +714,12 @@ While we felt that it was not the ideal style of interaction we would prefer,
 the experience with CorC motivated the creation of Guabao.
 
 Dafny \cite{Leino:14:Dafny} is a programming language and environment for program development and verification.
-As the user types in a program, Dafny verifies it by computing sufficient verification conditions and delegate them to an SMT solver, signals errors, and displays counter examples when a program does not meet the specification.
+As the user types in a program, Dafny verifies it by computing sufficient verification conditions and delegates them to an SMT solver, signals errors, and displays counter examples when a program does not meet the specification.
 The language provides a wide spectrum of features including
 inductive datatypes, classes and inheritance, recursive functions, mutable data structures.
-Verified program can be compiled to Java, C#, etc.
+Verified program can be compiled to Java, C\#, etc.
 Dafny is built around the model that the user programs and the system proves,
-while we wish the user to be more actively engaged in the proving aspect, and let proving guides programming.
+while we wish the user to be more actively engaged in the proving aspect, and let proving guide programming.
 Still, in many aspects Dafny is a matured, ideal environment that meets our needs and offers much more --- we might not have developed Guabao had we known about Dafny earlier.
 We wish that Guabao will eventually grow into a system that is as complete as Dafny.
 
@@ -745,10 +730,10 @@ Programs cannot be edited directly and must be manipulated through tactics.
 For example, ``IfIntro'' introduces an |IF| statement,
 ``WhileStrInv'' strengthens the invariant of a loop, etc.
 Tactics are also used to manipulate formulae, and these formulae can be fed back to tactics manipulating programs.
-Crucial proofs can be delegate to SMT solvers.
-Due to the tactic-based approach, programs in CAPS are represented by and displayed as graphs.
+Crucial proofs can be delegated to SMT solvers.
+Due to the tactic-based approach, programs in CAPS are represented by and displayed as diagrams.
 One of the advantages is that CAPS maintains the full history of program development.
-The user may easily roll back to a previous stage and start a new experimental branch.
+The user can easily roll back to a previous stage and start a new experimental branch.
 
 \section{Conclusions and Future Work}
 \label{sec:conclude}
@@ -766,10 +751,10 @@ We hope to conduct a more through survey when Guabao grows into a more matured s
 
 A lot remains to be done.
 To begin with, Guabao needs to be equipped with a sufficient library of standard functions and subroutines.
-We also plan to extend Guabao with a number of features including procedure calls and ability to manipulate data structures with pointers.
+We also plan to extend Guabao with a number of features including procedure calls and the ability to manipulate data structures with pointers.
 To describe properties of such structure, the language in the assertions of Guabao needs to be extended to a more complete functional language.
 Finally, to verify the proofs written by users, we need a formal representation of equational proofs.
-For this purpose, the aforementioned functional language could be designed to be a language with dependent type, in which proofs can be represented by Curry-Howard correspondence.
+For this purpose, the aforementioned functional language could be a language with dependent type, in which proofs can be represented by Curry-Howard correspondence.
 Or we can delegate the job to an existing theorem prover and use its language.
 It remains to see what is the most suitable.
 

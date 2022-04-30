@@ -483,8 +483,7 @@ The program is then derived by manipulating the pre/postconditions using various
 Various previous work~\cite{Dijkstra:76:Discipline,%
 Gries:81:Science,Kaldewaij:90:Programming,Morgan:90:Programming,%
 Backhouse:03:Program,Backhouse:11:Algorithmic} collectively developed a methodology of program development from specification, equipped with techniques for constructing a loop invariant from a desired postcondition, constructing the loop body from its last step, ensuring termination, etc.
-This methodology was applied to derive algorithms
-solving individual small problems
+This methodology was applied to derive algorithms solving individual small problems
 (e.g~\cite{Rem:89:Small,Rem:90:Small}) as well as families of problems (e.g~\cite{Zantema:92:Longest}).
 % Meanwhile, derivation of functional programs, a closely related topic, has also been developing (e.g~\cite{Bird:10:Pearls}).
 Within the advocating community it is at least wished that the concept of program derivation should be taught as part of the fundamental training for programmers and computing science majors.
@@ -496,7 +495,7 @@ Therefore we created Guabao.
 The aim is to develop a programming environment having the following features:
 \begin{enumerate}
 \item It encourages {\bf developing proofs and programs together}.
-While the user may certainly write up all the code in Guabao and verify it afterwards, the interface shall allow the user to interleave proving and coding, and let the two modes aid each other.
+While the user may certainly write up all the code in Guabao and verify it afterwards, the interface shall encourage the user to interleave proving and coding, and let the two modes aid each other.
 \item It encourages {\bf backward-reasoning}.
 Since it is easier to construct the weakest precondition of an assignment (\ensuremath{\Varid{x}\mathbin{:=}\Varid{e}}) from its postcondition than the other way round,
 to construct a block of statements, many derivation techniques start with thinking about what the \emph{last assignment} could be.
@@ -517,7 +516,7 @@ Guabao does employ an SMT solver (currently Z3~\cite{MS:12:Z3}) to discharge sim
 However, we believe that proving properties that are related to the algorithmic aspect of a program and, in case of failure, learning from the proof how the program should evolve to allow the proof to go through, is a part of the program development process, which should be carried out by the user.
 It is especially so in a course teaching program derivation.
 Currently Guabao does not check user-written proofs.
-To do so we shall develop a representation of equational proofs, which is one of our future works.
+To do so we need to develop a representation of equational proofs, which is one of our future works.
 \end{enumerate}
 
 Guabao is implemented as an extension of the editor Visual Studio Code,
@@ -581,7 +580,7 @@ They can be accompanied by an optional assertion stating properties we assume ab
 
 An assertion is a Boolean-valued expression in curly brackets.
 By the convention of the program derivation community, a \emph{Hoare triple} \ensuremath{\htriple{\Conid{P}}{\Conid{S}}{\Conid{Q}}} denotes total correctness: that is, the program \ensuremath{\Conid{S}}, when executed in a state satisfying \ensuremath{\Conid{P}}, \emph{terminates} in a state satisfying \ensuremath{\Conid{Q}}.
-We prefer it than the partial correctness interpretation (that is, \ensuremath{\Conid{S}} establishes \ensuremath{\Conid{Q}} \emph{if} it terminates) because, as we will see in Section~\ref{sec:programming-example}, that the program must terminate provides useful hints about how it can be written.
+We prefer it over the partial correctness interpretation (that is, \ensuremath{\Conid{S}} establishes \ensuremath{\Conid{Q}} \emph{if} it terminates) because, as we will see in Section~\ref{sec:programming-example}, that the program must terminate provides useful hints about how it can be written.
 % The notation |[!pre, post!]| denotes a \emph{spec} --- a hole yet to be filled in with code that shall establish the postcondition |post| provided that precondition |pre| is satisfied.
 
 % For example, the following is an unfinished program that, upon exit, stores the value of |A * B| in |r|, provided that both |A| and |B| are non-negative.
@@ -641,12 +640,6 @@ Once we introduce such a loop, however, we have also given ourselves \emph{four}
 \>[38]{}\htriple{\Conid{P}\mathrel{\wedge}\Conid{Bi}\mathrel{\wedge}\Varid{e}\mathrel{=}\Conid{C}}{\Conid{Si}}{\Varid{e}\mathbin{<}\Conid{C}}\;\mbox{,~~for~}\Varid{i}\in \{\mskip1.5mu \mathrm{0},\mathrm{1}\mskip1.5mu\}~~.{}\<[E]%
 \printlineend\ColumnHook
 \end{hscode}\resethooks
-% \begin{enumerate}
-% \item[({\sf InvBase})] |P && not (B0 |||| B1) ==> Q|,
-% \item[({\sf InvInd})] |htriple (P && Bi) Si P| for |i `elem` {0,1}|,
-% \item[({\sf TermBase})] |P && (B0 |||| B1) ==> e >= 0|,
-% \item[({\sf TermInd})] |htriple (P && Bi && e = C) Si (e < C)| for |i `elem` {0,1}|.
-% \end{enumerate}
 Properties {\sf InvBase} and {\sf InvInd} guarantee that the loop is partially correct: that is, if the loop terminates at all, it terminates in a state satisfying \ensuremath{\Conid{Q}}.
 {\sf TermBase} and {\sf TermInd} establish that the loop does terminate.
 The four properties together guarantee total correctness.
@@ -696,24 +689,24 @@ The question mark indicates code yet to be written.
 % \end{figure}
 
 Guabao parses and analyses the code as it is typed into the editor.
-Once the code is pasted into Guabao, we will see:\\
+Once the code is entered, we will see:\\
 \sshotimg{sshot00}\\
 Guabao automatically expands the question mark \ensuremath{\mathbin{?}} to a \emph{spec} — a hole in the program to be filled in, denoted by \ensuremath{[\mskip1.5mu \mathbin{!}\mathbin{...}\mathbin{!}\mskip1.5mu]}.
 The idea of a spec is inspired by Morgan~\cite{Morgan:90:Programming}, with a slight difference: in Morgan~\cite{Morgan:90:Programming} one starts program construction from a spec with given pre/postconditions, while in Guabao the pre/postconditions are inferred.
 The interface shows, on line 5 and 7, that code to be filled in shall bring the state of the system from precondition \ensuremath{\Conid{True}} to postcondition \ensuremath{\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}}. Properties of global constants (namely \ensuremath{\Conid{B}\geq \mathrm{0}}) are universally true and implicitly conjuncted with all assertions. They are displayed separately in a ``Property'' section in the right pane.
 
 \paragraph{Introducing a Loop}
-For such a non-trival task we expects that a loop is needed,
+For such a non-trival task we expect that a loop is needed,
 so we try to fill in the spec:
 \\\sshotimg{sshot01}\\
 Guabao syntactically enforces that each loop comes with a loop invariant and a bound.
 Various techniques were developed to construct candidates of loop invariants from the postcondition.
-We cannot properly cover the techniques in this paper but, for interested readers, we recommend Kaldewaij~\cite{Kaldewaij:90:Programming}.
+We cannot properly cover all the techniques in this paper but, for interested readers, we recommend Kaldewaij~\cite{Kaldewaij:90:Programming}.
 For this problem, we use one of the standard tricks:
-choose \ensuremath{\Varid{a}\times\Varid{b}\mathbin{+}\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}} as the loop invariant (line 7), which can be established by initialisation \ensuremath{\Varid{a},\Varid{b},\Varid{r}\mathbin{:=}\Conid{A},\Conid{B},\mathrm{0}} (line 6).
+choosing \ensuremath{\Varid{a}\times\Varid{b}\mathbin{+}\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}} as the loop invariant (line 7), which can be established by initialisation \ensuremath{\Varid{a},\Varid{b},\Varid{r}\mathbin{:=}\Conid{A},\Conid{B},\mathrm{0}} (line 6).
 By letting the guard be \ensuremath{\Varid{b}\mathrel{\ne}\mathrm{0}} (line 8), the proof obligation {\sf InvBase} instantiates to \ensuremath{\Varid{a}\times\Varid{b}\mathbin{+}\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}\mathrel{\wedge}\Varid{b}\mathrel{=}\mathrm{0}\mathrel{\Rightarrow}\Varid{r}\mathrel{=}\Conid{A}\times\Conid{B}}, which is trivial to prove.
-Now that the loop terminates when \ensuremath{\Varid{b}\mathrel{=}\mathrm{0}}, a strategy would be to keep decreasing \ensuremath{\Varid{b}} in the loop body until it reaches \ensuremath{\mathrm{0}},
-therefore we let \ensuremath{\Varid{b}} be the bound (line 7).
+Now that the loop terminates when \ensuremath{\Varid{b}\mathrel{=}\mathrm{0}}, a strategy would be to keep decreasing \ensuremath{\Varid{b}} in the loop body until it reaches \ensuremath{\mathrm{0}}.
+Therefore we let \ensuremath{\Varid{b}} be the bound (line 7).
 The loop body is left as a question mark.
 
 When the cursor is in the spec, press {\tt ctrl-c-r} to fill in the spec.
@@ -735,7 +728,7 @@ Let us get a closer look at the interface of Guabao.
 %Now it is a good time to inspect the interface of Guabao.
 In the program in the left pane,
 blue shade in the code indicates ``there are proof obligations incurred here.''
-Program locations associated with more POs get a thicker shade.
+Program locations associated with more POs get thicker shades.
 The right pane contains information including
 \begin{itemize}
 \item inferred POs,
@@ -771,10 +764,10 @@ POs in the right pane include:
 \end{hscode}\resethooks
 %The first one is aforementioned {\sf InvBase}, while the second is {\sf TermBase}.
 
-The {\sf InvBase} PO is trivial to prove --- the invariant and the bound were designed to make it trivial.
+The PO labelled {\sf InvBase} is trivial to prove --- the invariant and the bound were designed to make it trivial.
 At the top of the box displaying this PO there is a icons of a magic wand.
-Clicking on it invokes the SMT solver Z3, which generates the output "Q.E.D", indicated that it is proved.
-The PO {\sf TermBase}, however, turns out to be falsifiable. Indeed, the premise does not guarantee \ensuremath{\Varid{b}\geq \mathrm{0}}! We thus realise that we need a stronger invariant. The new invariant would be:
+Clicking on it invokes the SMT solver Z3, which generates the output "Q.E.D.", indicating that it is proved.
+The PO labelled {\sf TermBase}, however, turns out to be falsifiable. Indeed, the premise does not guarantee \ensuremath{\Varid{b}\geq \mathrm{0}}! We thus realise that we need a stronger invariant. The new invariant would be:
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{21}{@{}>{\hspre}c<{\hspost}@{}}%
@@ -787,14 +780,6 @@ The PO {\sf TermBase}, however, turns out to be falsifiable. Indeed, the premise
 \printlineend\ColumnHook
 \end{hscode}\resethooks
 After the user updates the invariant, the POs and the specs are updated accordingly.
-
-% Each PO comes with a hash key. Clicking on the hash key for the first PO, for example, results in the screenshot in the bottom of Figure~\ref{fig:sshot23}.
-% %\\\sshotimg{sshot03}\\
-% A new comment block having the hash key is added to the bottom of the code, in which the programmer can write up a proof of the corresponding property.
-% A program is proven correct if all POs are proved.
-% Hash key of a PO with a proof block is displayed in blue (see the top-right corner).
-% Currently the system makes no attempt to check these proofs, however.
-% They are just comments for the user.
 
 
 \paragraph{Constructing the Loop Body}
@@ -853,7 +838,7 @@ we learn that \ensuremath{\Varid{b}\mathbin{:=}\Varid{b}\times\mathrm{2};\Varid{
 
 Another possible choice is \ensuremath{\Varid{a}\mathbin{:=}\Varid{a}\times\mathrm{2}}. If we try this option:\\
 \sshotimg{sshot06}\\
-It turns out that we have to prove a PO that simplifies to
+It turns out that we have to prove a PO that is essentially
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{36}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -867,8 +852,8 @@ Each PO comes with a hash key.
 Clicking on the hash key ({\sf \#5F2E722} in the screenshot above) for the PO creates
 a new comment block labelled by the hash key, in which the programmer can write
 up a proof of the corresponding property.
-Hash key of a PO with a proof block is displayed in blue.
-A program is proven correct if all POs are either proved by Z3 or by the programmer.
+Hash key of a PO having a proof block is displayed in blue.
+A program is proven correct if all POs are proved either by Z3 or by the programmer.
 
 Currently the system makes no attempt to check the proofs written by the user ---
 in a lecture the proofs would be checked by a teacher.
@@ -903,7 +888,7 @@ The current code is:
 
 \paragraph{Totalisation}
 We are not done yet. Among all the POs we will be asked to prove that \ensuremath{\mathbf{if}} is total --- every possible case is covered.
-Therefore we need to think about what to do in the \ensuremath{\Varid{odd}\;\Varid{b}} case. For this case we might decrease \ensuremath{\Varid{b}} by \ensuremath{\Varid{b}\mathbin{:=}\Varid{b}\mathbin{-}\mathrm{1}}. By a similar process we can construct what to do with \ensuremath{\Varid{a}} and \ensuremath{\Varid{r}} in this case to maintain the invariant. A possible final program would be (omitting the declarations):
+Therefore we need to think about what to do in the \ensuremath{\Varid{odd}\;\Varid{b}} case. For this case we might decrease \ensuremath{\Varid{b}} using \ensuremath{\Varid{b}\mathbin{:=}\Varid{b}\mathbin{-}\mathrm{1}}. By a similar process we can construct what to do with \ensuremath{\Varid{a}} and \ensuremath{\Varid{r}} in this case to maintain the invariant. A possible final program would be (omitting the declarations):
 \begin{hscode}\linenumsetup\printlinebegin\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{15}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -979,7 +964,7 @@ The program is correct as long as one can prove all the POs.
 \paragraph{Summary}
 Let us recapitulate the interaction between a program and its proof in this example.
 Certainly, the program determines what ought to be proved --- introducing a statement also introduces corresponding POs.
-Meanwhile, these POs also gave hints on how to proceed with program construction.
+Meanwhile, these POs gave hints on how to proceed with program construction.
 One may design the program --- for example, choosing the loop guard or choosing a method to decrease the bound --- such that some POs are trivial to discharge.
 Pre/postconditions of a spec, inferred from future POs, shows what a piece of code is supposed to do.
 By observing what is missing in an attempted proof, one may learn how to strengthen the loop invariant, to enclose the program fragment in a guard, or learn that the current choice is simply wrong.
@@ -1007,14 +992,14 @@ The interface of Guabao aims to encourage such interaction.
 \paragraph{Other Features}
 Figure~\ref{fig:mss} presents the classical \emph{maximum segment sum} problem, which demonstrates some features we have not mentioned in the previous example.
 Given an array of \ensuremath{\Conid{N}} integers (line 2), the goal is to find the maximum possible some of a consecutive segment.
-The postcondition on line 17 formally describes the goal --- see the use of Eindhoven notation for quantifiers, which denotes ``for \ensuremath{\mathrm{0}\leq \Varid{i}\leq \Varid{j}\leq \Conid{N}}, collect \ensuremath{\Varid{sum}\;\Varid{i}\;\Varid{j}} and find the largest \ensuremath{(\mathbin{\uparrow})},  where \ensuremath{\Varid{i}} and \ensuremath{\Varid{j}} are bound variables.''
+The postcondition on line 17 formally describes the goal --- notice the use of Eindhoven notation for quantification, which denotes ``for \ensuremath{\mathrm{0}\leq \Varid{i}\leq \Varid{j}\leq \Conid{N}}, collect \ensuremath{\Varid{sum}\;\Varid{i}\;\Varid{j}} and find the largest \ensuremath{(\mathbin{\uparrow})},  where \ensuremath{\Varid{i}} and \ensuremath{\Varid{j}} are bound variables.''
 Guabao supports arrays that can be nested and mutable (if declared in \ensuremath{\mathbf{var}}).
-Pure functions to be used in assertions can be defined in declaration blocks \ensuremath{\{\mskip1.5mu \mathbin{:}\mathbin{...}\mathbin{:}\mskip1.5mu\}}.
-Shown in the right pane a PO induced from {\sf InvInd} --- that the invariant holds after one more iteration of the loop.
+Pure functions to be used in assertions can be defined in declaration blocks \ensuremath{\{\mskip1.5mu \mathbin{:}\mathbin{...}\mathbin{:}\mskip1.5mu\}} (line 5 -- 7 in Figure~\ref{fig:mss}).
+Shown in the right pane is a PO induced from {\sf InvInd} --- that the invariant holds after one more iteration of the loop.
 The notation \ensuremath{\Conid{P}\;\lbrack\Varid{s}\backslash\Varid{s}\mathbin{\uparrow}\Varid{r}\rbrack} denotes substituting \ensuremath{\Varid{s}\mathbin{\uparrow}\Varid{r}} for all free occurrences of \ensuremath{\Varid{s}} in \ensuremath{\Conid{P}}, which appears in the PO as a consequences of \ensuremath{\Varid{s}\mathbin{:=}\Varid{s}\mathbin{\uparrow}\Varid{r}} in the code. Clicking on \ensuremath{\Conid{P}} expands its definition and performs the substitution.
 
 Like the previous example, development of this program was not done in one step.
-The usual story goes like: we started with a spec without \ensuremath{\Varid{r}}, using \ensuremath{\Conid{P}\mathrel{\wedge}\mathrm{0}\leq \Varid{n}\leq \Conid{N}} as the loop invariant, and the first attempt was to construct the main loop with \ensuremath{\Varid{n}\mathbin{:=}\Varid{n}\mathbin{+}\mathrm{1}} as its \emph{last} step. While trying to satisfy the spec and prove {\sf InvInd}, we would discover that, to update \ensuremath{\Varid{s}} quickly, we may strengthen the invariant with a variable \ensuremath{\Varid{r}}, storing the maximum \emph{suffix} sum, as stated by \ensuremath{\Conid{Q}\;\Varid{n}}, which was also discovered during the proof. The interface of Guabao wishes to make this process natural and smooth.
+The usual story goes like: we started with a spec without \ensuremath{\Varid{r}}, using \ensuremath{\Conid{P}\;\Varid{n}\mathrel{\wedge}\mathrm{0}\leq \Varid{n}\leq \Conid{N}} as the loop invariant, and the first attempt was to construct the main loop with \ensuremath{\Varid{n}\mathbin{:=}\Varid{n}\mathbin{+}\mathrm{1}} as its \emph{last} step. While trying to satisfy the spec and prove {\sf InvInd}, we would discover that, to update \ensuremath{\Varid{s}} quickly, we may strengthen the invariant with a variable \ensuremath{\Varid{r}}, storing the maximum \emph{suffix} sum, as stated by \ensuremath{\Conid{Q}\;\Varid{n}}, which was also discovered during the proof. The interface of Guabao wishes to make this process natural and smooth.
 
 \section{Behind the Scenes}
 \label{sec:po-generation}
@@ -1176,7 +1161,7 @@ In contrast, while ${\sf P}_2$ is a valid program in the traditional setting, Gu
 We believe that this is suitable for Guabao, which is not designed to prove programs in general, but to construct programs with an intention in mind.
 
 It is also worth noting that, while some tools for program construction demand programmers to specify intermediate conditions between every sequenced statements (that is, to construct \ensuremath{\htriple{\Conid{P}}{\Conid{S}_{0};\Conid{S}_{1}}{\Conid{Q}}} the user has to provide \ensuremath{\Conid{R}} such that \ensuremath{\htripletwo{\Conid{P}}{\Conid{S}_{0}}{\Conid{R}}{\Conid{S}_{1}}{\Conid{Q}}} holds, see Section~\ref{sec:related-works}),
-this is not so in Guabao. Instead, weakest preconditions are accumulated until we meet a programmer-inserted assertion, where we emit a PO.
+this is not so in Guabao. Instead, weakest preconditions are accumulated until we meet an assertion, where we emit a PO.
 
 % It feels like usually, "while some tools for program construction demand..." needs a citation, I'm not sure if it's needed here.
 
@@ -1230,10 +1215,7 @@ For other simple, non-sequence statements we fall back to \ensuremath{\Conid{P}\
 \column{3}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{20}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{25}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{26}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{27}{@{}>{\hspre}c<{\hspost}@{}}%
-\column{27E}{@{}l@{}}%
-\column{29}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{27}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{30}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{31}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{39}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -1241,7 +1223,7 @@ For other simple, non-sequence statements we fall back to \ensuremath{\Conid{P}\
 \column{46}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{52}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{60}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{61}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{62}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
 \>[B]{}\lBrace\Conid{P}\rBrace\,\mathbf{if}\;\Conid{B}_{0}\to \Conid{S}_{0}\mid \Conid{B}_{1}\to \Conid{S}_{1}\;\mathbf{fi}\,\lBrace\Conid{Q}\rBrace\mathrel{=}{}\<[E]%
 \printlineend\\
@@ -1278,17 +1260,16 @@ For other simple, non-sequence statements we fall back to \ensuremath{\Conid{P}\
 \>[20]{}\mathrel{=}\Conid{Q'}\leftarrow \Varid{wp}\;\Varid{ss}\;\Conid{Q};\lBrace\Conid{P}\rBrace\,\Varid{s}\,\lBrace\Conid{Q'}\rBrace{}\<[52]%
 \>[52]{}\label{code:struct:seq:1}{}\<[E]%
 \printlineend\\[\blanklineskip]%
-\printlinebegin\>[B]{}\lBrace\Conid{P}\rBrace\,\Varid{ss}\;\{\mskip1.5mu \Conid{R}\mskip1.5mu\}\;\Conid{Ss}\,\lBrace\Conid{Q}\rBrace{}\<[26]%
-\>[26]{}\mathrel{=}\lBrace\Conid{P}\rBrace\,\Varid{ss}\,\lBrace\Conid{R}\rBrace;\lBrace\Conid{R}\rBrace\,\Conid{Ss}\,\lBrace\Conid{Q}\rBrace{}\<[61]%
-\>[61]{}\label{code:struct:seq:2}{}\<[E]%
+\printlinebegin\>[B]{}\lBrace\Conid{P}\rBrace\,\Varid{ss}\;\{\mskip1.5mu \Conid{R}\mskip1.5mu\}\;\Conid{Ss}\,\lBrace\Conid{Q}\rBrace{}\<[27]%
+\>[27]{}\mathrel{=}\lBrace\Conid{P}\rBrace\,\Varid{ss}\,\lBrace\Conid{R}\rBrace;\lBrace\Conid{R}\rBrace\,\Conid{Ss}\,\lBrace\Conid{Q}\rBrace{}\<[62]%
+\>[62]{}\label{code:struct:seq:2}{}\<[E]%
 \printlineend\\
 \printlinebegin\>[B]{}\lBrace\Conid{P}\rBrace\,\Varid{ss}\;\lbrack!~!\rbrack\;\Conid{Ss}\,\lBrace\Conid{Q}\rBrace{}\<[27]%
-\>[27]{}\mathrel{=}{}\<[27E]%
+\>[27]{}\mathrel{=}{}\<[30]%
 \>[30]{}\Conid{P'}\leftarrow \Varid{sp}\;\Varid{s}\;\Conid{P};\Conid{Q'}\leftarrow \Varid{wp}\;\Conid{Ss}\;\Conid{Q};{}\<[60]%
 \>[60]{}\label{code:struct:seq:3}{}\<[E]%
 \printlineend\\
-\printlinebegin\>[27]{}\hsindent{2}{}\<[29]%
-\>[29]{}\Varid{tellSpec}\;[\mskip1.5mu \mathbin{!}\Conid{P'},\Conid{Q'}\mathbin{!}\mskip1.5mu]{}\<[E]%
+\printlinebegin\>[30]{}\Varid{tellSpec}\;[\mskip1.5mu \mathbin{!}\Conid{P'},\Conid{Q'}\mathbin{!}\mskip1.5mu]{}\<[E]%
 \printlineend\\[\blanklineskip]%
 \printlinebegin\>[B]{}\Varid{termInd}\;\Conid{P}\;\Varid{e}\;\Conid{B}\;\Conid{S}\mathrel{=}{}\<[20]%
 \>[20]{}\mathbf{if}\;\Varid{containsSpec}\;\Conid{S}\;\mathbf{then}\;\Varid{return}\;(){}\<[E]%
@@ -1315,7 +1296,7 @@ Furthermore, we need to infer pre/postconditions for specs.
 Therefore we partition a sequence of statements into segments separated by assertions or specs, and process them segment-by-segment.
 We call a sequence \emph{simple} if it contains no assertions or specs.
 In the patterns between line~\ref{code:struct:seq:0} and \ref{code:struct:seq:3}, \ensuremath{\Varid{ss}} denotes a (possibly empty) simple sequence of statements, while \ensuremath{\Conid{Ss}} denotes any sequence.
-Lines \ref{code:struct:seq:0} -- \ref{code:struct:seq:1} deal with simple sequences.
+Line \ref{code:struct:seq:0} -- \ref{code:struct:seq:1} deal with simple sequences.
 For an empty sequence we simply emit \ensuremath{\Conid{P}\mathrel{\Rightarrow}\Conid{Q}}.
 For \ensuremath{(\Varid{s};\Varid{ss})}, we compute \ensuremath{\Varid{wp}\;\Varid{ss}\;\Conid{Q}}, and let it be the postcondition for \ensuremath{\Varid{s}}.
 %\todo{a question}
@@ -1391,7 +1372,7 @@ When specs appears consecutively (e.g. \ensuremath{\Varid{ss}_{0}\;\lbrack!~!\rb
 \end{figure}
 
 Finally, let us talk about the case for \ensuremath{\mathbf{do}\mathbin{...}\mathbf{od}}.
-Lines~\ref{code:struct:do:0} -- \ref{code:struct:do:3} in Figure~\ref{fig:struct}
+Line~\ref{code:struct:do:0} -- \ref{code:struct:do:3} in Figure~\ref{fig:struct}
 respectively correspond to {\sf InvBase}, {\sf InvInd}, {\sf TermBase}, and {\sf TermInd} discussed in Section~\ref{sec:gcl}.
 The last case is the most tricky.
 Recall that, according to {\sf TermInd},
@@ -1421,12 +1402,12 @@ While we felt that it was not the ideal style of interaction we would prefer,
 the experience with CorC motivated the creation of Guabao.
 
 Dafny \cite{Leino:14:Dafny} is a programming language and environment for program development and verification.
-As the user types in a program, Dafny verifies it by computing sufficient verification conditions and delegate them to an SMT solver, signals errors, and displays counter examples when a program does not meet the specification.
+As the user types in a program, Dafny verifies it by computing sufficient verification conditions and delegates them to an SMT solver, signals errors, and displays counter examples when a program does not meet the specification.
 The language provides a wide spectrum of features including
 inductive datatypes, classes and inheritance, recursive functions, mutable data structures.
-Verified program can be compiled to Java, C#, etc.
+Verified program can be compiled to Java, C\#, etc.
 Dafny is built around the model that the user programs and the system proves,
-while we wish the user to be more actively engaged in the proving aspect, and let proving guides programming.
+while we wish the user to be more actively engaged in the proving aspect, and let proving guide programming.
 Still, in many aspects Dafny is a matured, ideal environment that meets our needs and offers much more --- we might not have developed Guabao had we known about Dafny earlier.
 We wish that Guabao will eventually grow into a system that is as complete as Dafny.
 
@@ -1437,10 +1418,10 @@ Programs cannot be edited directly and must be manipulated through tactics.
 For example, ``IfIntro'' introduces an \ensuremath{\mathbf{if}} statement,
 ``WhileStrInv'' strengthens the invariant of a loop, etc.
 Tactics are also used to manipulate formulae, and these formulae can be fed back to tactics manipulating programs.
-Crucial proofs can be delegate to SMT solvers.
-Due to the tactic-based approach, programs in CAPS are represented by and displayed as graphs.
+Crucial proofs can be delegated to SMT solvers.
+Due to the tactic-based approach, programs in CAPS are represented by and displayed as diagrams.
 One of the advantages is that CAPS maintains the full history of program development.
-The user may easily roll back to a previous stage and start a new experimental branch.
+The user can easily roll back to a previous stage and start a new experimental branch.
 
 \section{Conclusions and Future Work}
 \label{sec:conclude}
@@ -1458,10 +1439,10 @@ We hope to conduct a more through survey when Guabao grows into a more matured s
 
 A lot remains to be done.
 To begin with, Guabao needs to be equipped with a sufficient library of standard functions and subroutines.
-We also plan to extend Guabao with a number of features including procedure calls and ability to manipulate data structures with pointers.
+We also plan to extend Guabao with a number of features including procedure calls and the ability to manipulate data structures with pointers.
 To describe properties of such structure, the language in the assertions of Guabao needs to be extended to a more complete functional language.
 Finally, to verify the proofs written by users, we need a formal representation of equational proofs.
-For this purpose, the aforementioned functional language could be designed to be a language with dependent type, in which proofs can be represented by Curry-Howard correspondence.
+For this purpose, the aforementioned functional language could be a language with dependent type, in which proofs can be represented by Curry-Howard correspondence.
 Or we can delegate the job to an existing theorem prover and use its language.
 It remains to see what is the most suitable.
 
